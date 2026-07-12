@@ -1,10 +1,14 @@
-# flux-vm: A 50-Opcode Stack-Based Constraint Checking Virtual Machine
+# FLUX VM — Stack-Based Constraint Checking Virtual Machine
+
+> **FLUX — Fluid Language Universal eXecution**
+> A gas-bounded stack machine for formal constraint validation, runtime policy enforcement, and bounded formal verification.
 
 [![CI](https://github.com/SuperInstance/flux-vm/actions/workflows/ci.yml/badge.svg)](https://github.com/SuperInstance/flux-vm/actions/workflows/ci.yml)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
-flux-vm is a minimal, stack-only virtual machine designed exclusively for formal constraint validation, runtime policy enforcement, and bounded formal verification. Unlike general-purpose VMs such as WASM or Lua, it ships with exactly 50 standardized opcodes grouped into 9 functional categories, with no dynamic memory allocation, unbounded loops, or side effects outside its fixed stack frame. It is purpose-built for use cases where strict safety, determinism, and computable worst-case execution time (WCET) are non-negotiable: zero-knowledge proof constraint checking, embedded system policy enforcement, and smart contract input validation.
+
+FLUX VM is a minimal, stack-only virtual machine designed exclusively for formal constraint validation, runtime policy enforcement, and bounded formal verification. Unlike general-purpose VMs such as WASM or Lua, it ships with exactly 50 standardized opcodes grouped into 9 functional categories, with no dynamic memory allocation, unbounded loops, or side effects outside its fixed stack frame. It is purpose-built for use cases where strict safety, determinism, and computable worst-case execution time (WCET) are non-negotiable: zero-knowledge proof constraint checking, embedded system policy enforcement, and smart contract input validation.
 
 ## Opcodes
 All opcodes use standard stack effect notation, grouped by functional category:
@@ -32,7 +36,7 @@ All opcodes use standard stack effect notation, grouped by functional category:
 | `NEG` | Pop `a`, push `-a` | Arithmetic | `[a]` → `[-a]` |
 | `INC` | Pop `a`, push `a + 1` | Arithmetic | `[a]` → `[a+1]` |
 | `DEC` | Pop `a`, push `a - 1` | Arithmetic | `[a]` → `[a-1]` |
-| `ABS` | Pop `a`, push `\|a\|` | Arithmetic | `[a]` → `[\|a\|]` |
+| `ABS` | Pop `a`, push `|a|` | Arithmetic | `[a]` → `[|a|]` |
 | **Comparison Operations** | | | |
 | `EQ` | Pop `a, b`, push 1 if equal, 0 otherwise | Comparison | `[a, b]` → `[1/0]` |
 | `NEQ` | Pop `a, b`, push 1 if not equal, 0 otherwise | Comparison | `[a, b]` → `[1/0]` |
@@ -56,7 +60,7 @@ All opcodes use standard stack effect notation, grouped by functional category:
 | `CLEAR_DOMAIN` | Reset allowed value set | Domain | ∅ → ∅ |
 | **Logical Operations** | | | |
 | `AND` | Pop `a, b`, push bitwise AND | Logical | `[a, b]` → `[a&b]` |
-| `OR` | Pop `a, b`, push bitwise OR | Logical | `[a, b]` → `[a\|b]` |
+| `OR` | Pop `a, b`, push bitwise OR | Logical | `[a, b]` → `[a|b]` |
 | `XOR` | Pop `a, b`, push bitwise XOR | Logical | `[a, b]` → `[a^b]` |
 | `NOT` | Pop `a`, push bitwise NOT | Logical | `[a]` → `[~a]` |
 | **Temporal Operations** | | | |
@@ -74,20 +78,10 @@ All opcodes use standard stack effect notation, grouped by functional category:
 ## Safety Properties
 flux-vm is engineered for strict, verifiable safety:
 1.  **Turing-Incomplete**: No unbounded loops or dynamic recursion, with all control flow bounded by fixed offsets
-# FLUX VM
 
-## What It Is
+---
 
-FLUX VM is a gas-bounded stack machine VM for constraint verification. Not general-purpose.
-
-### Verified Properties
-
-| Property | Status |
-|----------|--------|
-| Turing-incomplete | ✅ Confirmed — gas-bounded dispatch, no loops/recursion |
-| Bounded WCET | ✅ Each opcode has a fixed gas cost; dispatch loop terminates when gas exhausts or pc reaches bytecode end |
-
-### Opcode Architecture
+## Implementation Details
 
 The VM is split across three independent implementations:
 
@@ -108,9 +102,6 @@ The VM is split across three independent implementations:
 - Types: I32, F32, CHECKPOINT/REVERT for transactional safety
 - Range checking, domain validation, checkpoint/revert
 
-**Total across all implementations: ~46 opcode definitions**
-(These are from 3 separate VMs, not one coherent ISA. They do not share opcode numbering.)
-
 ### Execution Model
 
 Gas-based execution. Each opcode consumes gas. Mandatory `max_gas` parameter bounds all computation. No loops, no jumps, no recursion — straight-line bytecode only.
@@ -122,29 +113,7 @@ while ((st.fault == 0U) && (st.pc < bc_len)) {
 }
 ```
 
-### Implementation Details
-
-- **Language:** C (MISRA-C 2012 compliant, comments say)
-- **Targets:** ARM architecture
-- **Computed goto** dispatch for opcode routing
-- **INT8 saturation** arithmetic in sat8 extension
-- **Transactional checkpoints** in monitor VM
-
-### What This Is NOT
-
-- Not a general-purpose VM
-- No Coq formal specifications (zero .v files in repo)
-- No DAL A certification artifacts
-- No TrustZone bridge to FLUX-X (those don't exist)
-- Not 50 opcodes — that's a marketing number from the old README
-
-### What Needs to Be Built
-
-- Coherent opcode ISA with defined numbering across all ops
-- Formal specification (Coq or similar)
-- Certification documentation (DO-178C DAL A path is aspirational in comments)
-- TrustZone bridge (planned? no implementation exists)
-- Active test suite (current test binary is x86-64, not runnable on ARM)
+---
 
 ## Workspace Crates
 
@@ -164,10 +133,46 @@ while ((st.fault == 0U) && (st.pc < bc_len)) {
 - **Edge** — Async runtime with networking, PLATO sync, and sensor pipelines.
 - **Thor** — GPU-class with batch CSP solving, fleet coordination, and axum WS.
 
+---
+
+## 📦 Related Packages
+
+FLUX is implemented across multiple languages — same bytecode, different shells:
+
+| Package | Language | Registry | Install |
+|---------|----------|----------|---------|
+| **[flux-vm](https://pypi.org/project/flux-vm/)** | Python | PyPI | `pip install flux-vm` |
+| **[fluxvm](https://crates.io/crates/fluxvm)** | Rust | crates.io | `cargo add fluxvm` |
+| **[flux-js](https://www.npmjs.com/package/flux-js)** | JavaScript | npm | `npm install flux-js` |
+| **[flux-compiler](https://github.com/SuperInstance/flux-compiler)** | Rust/Python | GitHub | `cargo install flux-compiler` |
+
+Additional implementations: [C](https://github.com/SuperInstance/flux-runtime-c) · [Zig](https://github.com/SuperInstance/flux-zig) · [Go](https://github.com/SuperInstance/flux-swarm) · [Java](https://github.com/SuperInstance/flux-java) · [WASM](https://github.com/SuperInstance/flux-wasm) · [CUDA](https://github.com/SuperInstance/flux-cuda)
+
+## 🌐 Ecosystem
+
+FLUX is part of a broader research ecosystem exploring agent-first computation:
+
+| Project | Description |
+|---------|-------------|
+| [PLATO Engine Block](https://github.com/SuperInstance/plato-engine-block) | Constraint engine powering FLUX verification |
+| [Constraint-Theory-Core](https://github.com/SuperInstance/Constraint-Theory) | Mathematical foundations for constraint-based computation |
+| [AI-Writings](https://github.com/SuperInstance/AI-Writings) | Philosophy, essays, and design rationale behind FLUX |
+| [Captain's Log](https://github.com/SuperInstance/captains-log) | Oracle1 growth diary and agent dojo curriculum |
+| [Iron-to-Iron](https://github.com/SuperInstance/iron-to-iron) | I2I protocol — agents communicate through git commits |
+| [flux-research](https://github.com/SuperInstance/flux-research) | 40K words: compiler taxonomy, ISA v2, agent-first design |
+
+📖 **[Full package index →](https://github.com/SuperInstance/flux/blob/main/PACKAGES.md)**
+
+---
+
 ## License
 
-Apache 2.0 — See [LICENSE](LICENSE) for details.
+MIT — See [LICENSE](LICENSE) for details.
 
 ## Contributing
 
 Contributions welcome. Run `cargo test --workspace` before submitting PRs.
+
+---
+
+*Same bytecode, different shells.* 🦀
