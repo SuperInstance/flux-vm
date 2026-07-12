@@ -1,5 +1,8 @@
 # flux-vm: A 50-Opcode Stack-Based Constraint Checking Virtual Machine
 
+[![CI](https://github.com/SuperInstance/flux-vm/actions/workflows/ci.yml/badge.svg)](https://github.com/SuperInstance/flux-vm/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 ## Overview
 flux-vm is a minimal, stack-only virtual machine designed exclusively for formal constraint validation, runtime policy enforcement, and bounded formal verification. Unlike general-purpose VMs such as WASM or Lua, it ships with exactly 50 standardized opcodes grouped into 9 functional categories, with no dynamic memory allocation, unbounded loops, or side effects outside its fixed stack frame. It is purpose-built for use cases where strict safety, determinism, and computable worst-case execution time (WCET) are non-negotiable: zero-knowledge proof constraint checking, embedded system policy enforcement, and smart contract input validation.
 
@@ -143,6 +146,28 @@ while ((st.fault == 0U) && (st.pc < bc_len)) {
 - TrustZone bridge (planned? no implementation exists)
 - Active test suite (current test binary is x86-64, not runnable on ARM)
 
+## Workspace Crates
+
+| Crate | Description |
+|-------|-------------|
+| `flux-ast` | Universal Constraint AST — single source of truth for constraint semantics |
+| `flux-isa` | Core Instruction Set Architecture — stack-based bytecode encoding |
+| `flux-isa-mini` | Minimal `no_std` ISA for bare-metal microcontrollers (STM32, Cortex-M) |
+| `flux-isa-std` | Standard ISA for embedded Linux (Raspberry Pi, Jetson Nano) |
+| `flux-isa-edge` | Async ISA runtime for fleet edge nodes (Jetson Xavier/Orin) |
+| `flux-isa-thor` | Heavyweight ISA for GPU-class edge (Jetson Thor / AGX Orin with CUDA) |
+
+### ISA Variants
+
+- **Mini** — Ultra-minimal for MCUs. ~20 opcodes, no allocations, `no_std`.
+- **Standard** — Full 50-opcode ISA for embedded Linux with serde support.
+- **Edge** — Async runtime with networking, PLATO sync, and sensor pipelines.
+- **Thor** — GPU-class with batch CSP solving, fleet coordination, and axum WS.
+
 ## License
 
-Apache 2.0 — Cocapn fleet infrastructure.
+Apache 2.0 — See [LICENSE](LICENSE) for details.
+
+## Contributing
+
+Contributions welcome. Run `cargo test --workspace` before submitting PRs.
