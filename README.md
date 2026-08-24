@@ -1,220 +1,230 @@
-# FLUX VM — Stack-Based Constraint Checking Virtual Machine
+# FLUX VM
 
-> **FLUX — Fluid Language Universal eXecution**
-> A gas-bounded stack machine for formal constraint validation, runtime policy enforcement, and bounded formal verification.
+A collection of stack-based virtual machines for bounded constraint checking,
+built independently in C and Rust under the same "FLUX" name. They are not
+one coherent product — see "What's actually here" below.
 
 [![CI](https://github.com/SuperInstance/flux-vm/actions/workflows/ci.yml/badge.svg)](https://github.com/SuperInstance/flux-vm/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-## Overview
+**This repository audits itself.** [`VERIFICATION.md`](VERIFICATION.md) is an
+internal review of an earlier version of this README against the actual code,
+and it found real problems: an opcode count that didn't exist anywhere in
+source, a certification claim with no supporting artifacts, a formal-methods
+claim with no formal methods. This README is the rewrite that followed —
+every number below was counted directly from the source in this repo, not
+carried over from the old copy. The method behind that review is written up,
+domain-neutrally, in [`docs/verification.md`](docs/verification.md); it's
+worth reading regardless of what you think of this project, because the
+failure mode it describes ("a claim outran the thing that was supposed to
+check it, and nothing noticed") is not specific to FLUX.
 
-FLUX VM is a minimal, stack-only virtual machine designed exclusively for formal constraint validation, runtime policy enforcement, and bounded formal verification. Unlike general-purpose VMs such as WASM or Lua, it ships with exactly 50 standardized opcodes grouped into 9 functional categories, with no dynamic memory allocation, unbounded loops, or side effects outside its fixed stack frame. It is purpose-built for use cases where strict safety, determinism, and computable worst-case execution time (WCET) are non-negotiable: zero-knowledge proof constraint checking, embedded system policy enforcement, and smart contract input validation.
+## What's actually here
 
-## Opcodes
-All opcodes use standard stack effect notation, grouped by functional category:
+There is no single FLUX VM. This repository contains **several independent
+implementations that share a name and a rough idea** (a small stack machine
+for checking numeric constraints against bounds) but do not share bytecode,
+opcode numbering, or a build system:
 
-| Mnemonic | Description | Category | Stack Effect |
-|---------|-------------|----------|--------------|
-| **Stack Operations** | | | |
-| `PUSH(n)` | Push 64-bit integer literal `n` to stack | Stack | → `[n]` |
-| `POP` | Remove top stack element | Stack | `[a]` → ∅ |
-| `DUP` | Duplicate top stack element | Stack | `[a]` → `[a, a]` |
-| `SWAP` | Swap top two stack elements | Stack | `[a, b]` → `[b, a]` |
-| `OVER` | Copy second-to-top element to top | Stack | `[a, b]` → `[a, b, a]` |
-| `ROT` | Rotate top three stack elements left | Stack | `[a, b, c]` → `[b, c, a]` |
-| `CLEAR` | Empty entire stack | Stack | `[any...]` → ∅ |
-| `PEEK(n)` | Copy `n`th stack element (0 = top) | Stack | `[..., x]` → `[..., x, x]` |
-| `DEPTH` | Push current stack depth to top | Stack | → `[d]` |
-| `NOP` | No-operation | Stack | ∅ → ∅ |
-| **Arithmetic Operations** | | | |
-| `ADD` | Pop `a, b`, push `a + b` | Arithmetic | `[a, b]` → `[a+b]` |
-| `SUB` | Pop `a, b`, push `a - b` | Arithmetic | `[a, b]` → `[a-b]` |
-| `MUL` | Pop `a, b`, push `a * b` | Arithmetic | `[a, b]` → `[a*b]` |
-| `DIV` | Pop `a, b`, push `a // b` (signed) | Arithmetic | `[a, b]` → `[a//b]` |
-| `MOD` | Pop `a, b`, push `a % b` (signed remainder) | Arithmetic | `[a, b]` → `[a%b]` |
-| `EXP` | Pop `a, b`, push `a^b` | Arithmetic | `[a, b]` → `[a^b]` |
-| `NEG` | Pop `a`, push `-a` | Arithmetic | `[a]` → `[-a]` |
-| `INC` | Pop `a`, push `a + 1` | Arithmetic | `[a]` → `[a+1]` |
-| `DEC` | Pop `a`, push `a - 1` | Arithmetic | `[a]` → `[a-1]` |
-| `ABS` | Pop `a`, push `|a|` | Arithmetic | `[a]` → `[|a|]` |
-| **Comparison Operations** | | | |
-| `EQ` | Pop `a, b`, push 1 if equal, 0 otherwise | Comparison | `[a, b]` → `[1/0]` |
-| `NEQ` | Pop `a, b`, push 1 if not equal, 0 otherwise | Comparison | `[a, b]` → `[1/0]` |
-| `LT` | Pop `a, b`, push 1 if `a < b`, 0 otherwise | Comparison | `[a, b]` → `[1/0]` |
-| `GT` | Pop `a, b`, push 1 if `a > b`, 0 otherwise | Comparison | `[a, b]` → `[1/0]` |
-| `LTE` | Pop `a, b`, push 1 if `a ≤ b`, 0 otherwise | Comparison | `[a, b]` → `[1/0]` |
-| `GTE` | Pop `a, b`, push 1 if `a ≥ b`, 0 otherwise | Comparison | `[a, b]` → `[1/0]` |
-| `ISZERO` | Pop `a`, push 1 if `a = 0`, 0 otherwise | Comparison | `[a]` → `[1/0]` |
-| `WITHIN` | Pop `val, min, max`, push 1 if `min ≤ val ≤ max` | Comparison | `[val, min, max]` → `[1/0]` |
-| **Range Operations** | | | |
-| `SET_RANGE_MIN(n)` | Set global range lower bound to `n` | Range | ∅ → ∅ |
-| `SET_RANGE_MAX(n)` | Set global range upper bound to `n` | Range | ∅ → ∅ |
-| `CHECK_RANGE` | Pop `val`, trap if outside global range | Range | `[val]` → `[val]` |
-| `CLEAR_RANGE` | Reset global range bounds | Range | ∅ → ∅ |
-| `GET_RANGE_MIN` | Push current lower bound to stack | Range | → `[min]` |
-| `GET_RANGE_MAX` | Push current upper bound to stack | Range | → `[max]` |
-| **Domain Operations** | | | |
-| `SET_DOMAIN(s)` | Define allowed value set of size `s` | Domain | ∅ → ∅ |
-| `CHECK_DOMAIN` | Pop `val`, trap if not in allowed set | Domain | `[val]` → `[val]` |
-| `IS_IN_DOMAIN` | Pop `val`, push 1 if in allowed set, 0 otherwise | Domain | `[val]` → `[1/0]` |
-| `CLEAR_DOMAIN` | Reset allowed value set | Domain | ∅ → ∅ |
-| **Logical Operations** | | | |
-| `AND` | Pop `a, b`, push bitwise AND | Logical | `[a, b]` → `[a&b]` |
-| `OR` | Pop `a, b`, push bitwise OR | Logical | `[a, b]` → `[a|b]` |
-| `XOR` | Pop `a, b`, push bitwise XOR | Logical | `[a, b]` → `[a^b]` |
-| `NOT` | Pop `a`, push bitwise NOT | Logical | `[a]` → `[~a]` |
-| **Temporal Operations** | | | |
-| `TIMESTAMP_PUSH` | Push current system timestamp to stack | Temporal | → `[ts]` |
-| `TIME_COMPARE` | Pop `a, b`, push 1 if `a` precedes `b` | Temporal | `[a, b]` → `[1/0]` |
-| `TIME_WINDOW_VALID` | Pop `start, end`, trap if current ts outside window | Temporal | `[start, end]` → `[ts]` |
-| **Security Operations** | | | |
-| `VERIFY_HASH(hash)` | Pop `data`, trap if hash mismatch | Security | `[data]` → `[data]` |
-| `CHECK_SIGNATURE(pubkey)` | Pop `sig, msg`, trap if invalid | Security | `[sig, msg]` → `[sig, msg]` |
-| `RESTRICT_EXEC(addr)` | Lock execution to opcode at `addr` | Security | ∅ → ∅ |
-| **Control Operations** | | | |
-| `JMP(addr)` | Jump to fixed opcode offset | Control | ∅ → ∅ |
-| `HALT` | Halt and return stack top | Control | ∅ → ∅ |
+| Implementation | Language | Where | Part of `cargo build --workspace`? |
+|---|---|---|---|
+| Core runtime | C | `src/flux_runtime_arm.c` / `flux_runtime_arm.h` | No — not a Cargo crate |
+| SAT8 saturation extension | C | `src/flux_sat8_ops.h` | No |
+| Runtime monitor | C | `src/flux_monitor_arm.c` | No |
+| `flux-isa` | Rust | `flux-isa/` | Yes |
+| `flux-isa-mini` | Rust | `flux-isa-mini/` | Yes |
+| `flux-isa-std` | Rust | `flux-isa-std/` | Yes |
+| `flux-isa-edge` | Rust | `flux-isa-edge/` | Yes |
+| `flux-isa-thor` | Rust | `flux-isa-thor/` | Yes |
+| `flux-ast` | Rust | `flux-ast/` | Yes |
+| FLUX-C → FLUX-X bridge | Python | `bridge/flux_c_to_x.py` | No (Python, runs standalone) |
+| A `.rs` file that is actually a design doc | — | `docs/flux-x-bridge-design.md` | No — see below |
 
-## Safety Properties
-flux-vm is engineered for strict, verifiable safety:
-1.  **Turing-Incomplete**: No unbounded loops or dynamic recursion, with all control flow bounded by fixed offsets
+The Rust crates above are one Cargo workspace and do build and test together
+(details under "Build and test"). The C files and the top-level `vm/` and
+`tests/*.rs` files are **not** referenced by any `Cargo.toml` and are not
+built by CI. `.github/workflows/ci.yml` runs `cargo check`, `cargo test`,
+`cargo clippy`, and `cargo fmt` — all scoped to `--workspace`, i.e. the six
+Rust crates only. Nothing in CI compiles the C sources or runs the Python
+scripts.
 
----
+## Opcodes — actual counts, per implementation
 
-## Implementation Details
+The old README claimed "exactly 50 standardized opcodes." That number
+appears nowhere in the source. Every implementation in this repo defines its
+own opcode set, and most of them disagree with each other about what a given
+byte value means. Counts below were obtained by counting `#define`/`enum`
+opcode entries directly (see the file for each):
 
-The VM is split across three independent implementations:
+| Implementation | File | Opcode count | Notes |
+|---|---|---|---|
+| Core runtime | `src/flux_runtime_arm.h` | 20 | `#define FLUX_OP_*` |
+| SAT8 extension | `src/flux_sat8_ops.h` | 8 | Extends the core numbering (opcodes `0x30`–`0x37`, no collisions) — core + SAT8 = **28** opcodes in one coherent scheme |
+| Runtime monitor | `src/flux_monitor_arm.c` | 21 | Its own numbering scheme, incompatible with the core runtime: e.g. opcode `0x01` is `PUSH_I8` in the core but `PUSH_I32` in the monitor |
+| `flux-isa` | `flux-isa/src/opcode.rs` | 37 | |
+| `flux-isa-mini` | `flux-isa-mini/src/opcode.rs` | 21 | Header comment says "21 essential operations stripped from the full 35" — matches its own count, not the "full 35" it refers to |
+| `flux-isa-std` | `flux-isa-std/src/opcode.rs` | 37 | Header comment says "All 35 FLUX ISA opcodes" — the comment is wrong; the enum has 37 variants |
+| `flux-isa-edge` | `flux-isa-edge/src/opcode.rs` | 34 | Header comment says "All 35" — actual count is 34 |
+| `flux-isa-thor` | `flux-isa-thor/src/opcode.rs` | 35 base + 8 Thor-specific = 43 | The only count here that's asserted by a test (`opcode::tests::base_count`, `opcode::tests::thor_count`) rather than just a comment |
+| FLUX-C → FLUX-X bridge map | `bridge/flux_c_to_x.py` | 29 | `OPCODE_MAP` entries. The module docstring separately claims FLUX-X has "247 opcodes" — that number is not backed by any opcode list in this repo |
 
-**flux_runtime_arm.h (core VM) — 19 opcodes**
-- Stack manipulation: NOP, DUP, SWAP
-- Immediate loads: PUSH_I8, PUSH_I16, PUSH_I32
-- Input: LOAD_INPUT
-- Arithmetic: ADD, SUB, MUL
-- Comparison: EQ, LT, GT
-- Boolean: AND, OR, NOT
-- Safety: ASSERT, CHECK_DOMAIN, RANGE, HALT
+None of these is 50. No two of the C implementations use the same numbering
+for the same byte, so "the FLUX-C opcode set" is not a single well-defined
+thing even within this repo — it's whichever of three files you happen to be
+reading. The 50-row opcode table that used to be in this README (`PUSH`,
+`POP`, `ROT`, `JMP`, `WITHIN`, `VERIFY_HASH`, `TIME_WINDOW_VALID`, `SET_DOMAIN`,
+and about a dozen others) does not correspond to any implementation in this
+repo — most of those mnemonics do not appear anywhere in the source. It has
+been removed rather than fixed, because fixing it would mean inventing a
+50-opcode ISA that doesn't exist. If one gets built, it belongs here with a
+count a test actually asserts, the way `flux-isa-thor` already does it.
 
-**flux_sat8_ops.h (saturation extension) — 8 opcodes**
-- SAT8, SAT8_ADD, SAT8_SUB, SAT8_MUL, SAT8_NEG, SAT8_CHECK, SAT8_CHECK_M, SAT8_ERRMASK
+## Safety properties
 
-**flux_monitor_arm.c (monitor VM) — 19 opcodes**
-- Separate numbering scheme (0x00–0xFF range)
-- Types: I32, F32, CHECKPOINT/REVERT for transactional safety
-- Range checking, domain validation, checkpoint/revert
-
-### Execution Model
-
-Gas-based execution. Each opcode consumes gas. Mandatory `max_gas` parameter bounds all computation. No loops, no jumps, no recursion — straight-line bytecode only.
+**"Turing-incomplete" is true of the C core runtime, and only there.**
+`src/flux_runtime_arm.c`'s dispatch loop is bounded by gas and by program
+counter, and the ISA it interprets has no jump, call, or loop opcode at all —
+a program of N instructions can execute at most N steps, structurally, not
+just by convention:
 
 ```c
 while ((st.fault == 0U) && (st.pc < bc_len)) {
     consume_gas(&st, gas_cost);
-    // dispatch to opcode handler
+    /* dispatch to opcode handler */
 }
 ```
 
----
+That is not true of every implementation in this repo. `flux-isa-std`
+(`flux-isa-std/src/vm.rs`) implements `Jmp`, `Call`, and `Ret` opcodes, and
+`Jmp` can set the instruction pointer backward — it is a real loop construct.
+Execution there is bounded the ordinary way sandboxed VMs are bounded (a
+configurable `max_instructions` counter, default 1,000,000), not by the
+absence of a loop opcode. Don't read "Turing-incomplete" as a blanket
+property of "FLUX VM" — it's a property of one specific C implementation.
 
-## Workspace Crates
+## Build and test
 
-| Crate | Description |
-|-------|-------------|
-| `flux-ast` | Universal Constraint AST — single source of truth for constraint semantics |
-| `flux-isa` | Core Instruction Set Architecture — stack-based bytecode encoding |
-| `flux-isa-mini` | Minimal `no_std` ISA for bare-metal microcontrollers (STM32, Cortex-M) |
-| `flux-isa-std` | Standard ISA for embedded Linux (Raspberry Pi, Jetson Nano) |
-| `flux-isa-edge` | Async ISA runtime for fleet edge nodes (Jetson Xavier/Orin) |
-| `flux-isa-thor` | Heavyweight ISA for GPU-class edge (Jetson Thor / AGX Orin with CUDA) |
+Requires a Rust toolchain for the workspace crates; a C compiler and Python 3
+for the pieces outside it.
 
-### ISA Variants
+```bash
+# The Cargo workspace (flux-ast, flux-isa, flux-isa-mini, flux-isa-std,
+# flux-isa-edge, flux-isa-thor) — this is what CI runs.
+cargo build --workspace
+cargo test --workspace
+```
 
-- **Mini** — Ultra-minimal for MCUs. ~20 opcodes, no allocations, `no_std`.
-- **Standard** — Full 50-opcode ISA for embedded Linux with serde support.
-- **Edge** — Async runtime with networking, PLATO sync, and sensor pipelines.
-- **Thor** — GPU-class with batch CSP solving, fleet coordination, and axum WS.
+Verified in this repo: `cargo build --workspace` completes with warnings
+only (unused imports/fields, no errors), and `cargo test --workspace` passes
+83 tests across the six crates, 0 failed.
 
----
+```bash
+# The Python pieces, outside the Cargo workspace and outside CI.
+python3 -m pytest tests/                # 12 passed
+python3 src/maritime_constraints.py     # standalone demo, runs directly
+python3 bridge/flux_c_to_x.py           # standalone demo, runs directly
+```
 
-## 📦 Related Packages
+The C core runtime (`src/flux_runtime_arm.c`, `src/flux_runtime_arm.h`) does
+**not** compile as committed with a standard compiler invocation
+(`gcc -c src/flux_runtime_arm.c`): the `.c` file includes `flux_runtime_arm.h`
+before `<stdint.h>`, and the header uses `uint16_t`/`int32_t`/`uint8_t`
+without including `<stdint.h>` itself, so the first inclusion fails with
+"unknown type name". It's written and commented for
+`arm-none-eabi-gcc -mcpu=cortex-r5 -mthumb`; it has not been verified to
+build for that target from this repo, and it does not build as a plain
+translation unit either. `src/flux_monitor_arm.c` compiles standalone with
+no such issue.
 
-FLUX is implemented across multiple languages — same bytecode, different shells:
+`test_sat8` is a prebuilt binary, x86-64 only (confirmed with `file`), not
+buildable from source in this repo. It runs and passes 5 tests on an x86-64
+host; it will not execute on an ARM host despite the C sources being written
+for ARM targets — the binary and the source it's presumably built from are
+for different architectures.
 
-| Package | Language | Registry | Install |
-|---------|----------|----------|---------|
-| **[flux-vm](https://pypi.org/project/flux-vm/)** | Python | PyPI | `pip install flux-vm` |
-| **[fluxvm](https://crates.io/crates/fluxvm)** | Rust | crates.io | `cargo add fluxvm` |
-| **[flux-js](https://www.npmjs.com/package/flux-js)** | JavaScript | npm | `npm install flux-js` |
-| **[flux-compiler](https://github.com/SuperInstance/flux-compiler)** | Rust/Python | GitHub | `cargo install flux-compiler` |
+## Workspace crates
 
-Additional implementations: [C](https://github.com/SuperInstance/flux-runtime-c) · [Zig](https://github.com/SuperInstance/flux-zig) · [Go](https://github.com/SuperInstance/flux-swarm) · [Java](https://github.com/SuperInstance/flux-java) · [WASM](https://github.com/SuperInstance/flux-wasm) · [CUDA](https://github.com/SuperInstance/flux-cuda)
+| Crate | What it is |
+|---|---|
+| `flux-ast` | Constraint AST types shared across the other crates |
+| `flux-isa` | A stack-based bytecode ISA and encoder |
+| `flux-isa-mini` | A `no_std` subset ISA (21 opcodes) aimed at bare-metal microcontroller targets |
+| `flux-isa-std` | An ISA with `serde` support and a VM that includes jump/call/return (see "Safety properties" above) |
+| `flux-isa-edge` | An async ISA runtime with a PLATO sync client and a sensor pipeline module |
+| `flux-isa-thor` | An ISA with a batch constraint solver and an `axum`-based WebSocket server; its "GPU" solve path is a CPU fallback with simulated GPU timing — the code comment for it reads `// Production: FFI to libflux_cuda.so` / `// For now: CPU fallback with GPU timing simulation`. No CUDA FFI is implemented in this repo. |
+
+All six build and their own test suites pass under `cargo test --workspace`
+(see counts above). That's what "part of the workspace" verifies — it does
+not mean every described capability (PLATO sync against a real server, GPU
+dispatch, fleet coordination) has been exercised against the real thing
+rather than against its own test doubles; check each crate's tests before
+relying on a specific capability.
+
+## The FLUX-C / FLUX-X bridge
+
+`bridge/flux_c_to_x.py` is a real, standalone Python script. It converts
+FLUX-C style variable-length bytecode into a fixed 4-byte instruction format
+it calls FLUX-X, using an opcode table (`OPCODE_MAP`) of 29 entries. Run it
+directly — `python3 bridge/flux_c_to_x.py` — and it prints a worked example.
+
+There used to be a second file, `bridge/flux_bridge.rs`, that read as a Rust
+security bridge between "FLUX-X" and "FLUX-C" with comments describing it as
+following "ARM TrustZone SMC principles." It is not Rust: it's prose with
+Markdown headers and code fences (` ### `, ` #### Cargo.toml `, ` ```rust `)
+pasted directly into a `.rs` file, it was never a member of the Cargo
+workspace, and it does not compile. It has been renamed and moved to
+[`docs/flux-x-bridge-design.md`](docs/flux-x-bridge-design.md) so it stops
+presenting as buildable source. Treat it as a design sketch, not as code.
+
+There is no ARM TrustZone code anywhere in this repository — no secure-world
+switch, no SMC instructions, nothing that runs in or talks to a TrustZone
+secure world. The phrase describes an intended security model in the design
+doc, not something implemented here.
+
+## Not built yet
+
+These appear in comments or in the design doc, but nothing in this repo
+implements them. Listed here so they're visible as intentions rather than
+silently dropped or, worse, silently implied to exist:
+
+- **DO-178C DAL A certification.** One comment in `src/flux_sat8_ops.h`
+  describes the code as "Safe for DO-178C DAL A certification path." There
+  are no certification artifacts in this repo — no compliance matrix, no
+  software development plan, no requirements traceability, nothing filed
+  with a certification authority. If that work starts, it belongs in its
+  own directory with its own paper trail.
+- **A Coq formalisation.** No `.v` files exist anywhere in this repository
+  (`find . -name "*.v"` returns nothing). Comments in `src/flux_sat8_ops.h`
+  reference a file, `flux_saturation_coq.v`, that is not present.
+- **A TrustZone bridge to a 247-opcode "FLUX-X" ISA**, in the sense the old
+  README implied — a real secure-world bridge with a real 247-entry opcode
+  table. See "The FLUX-C / FLUX-X bridge" above for what actually exists: a
+  working but much smaller (29-entry) Python conversion table, and an
+  unbuilt Rust design sketch.
+- **GPU execution for `flux-isa-thor`.** The solver falls back to CPU with
+  simulated timing; the CUDA FFI path is a comment, not code.
+- **A single 50-opcode ISA that all of the above agree on.** See "Opcodes"
+  above.
 
 ## License
 
-MIT — See [LICENSE](LICENSE) for details.
+Apache License 2.0 — see [LICENSE](LICENSE) for the full text. `Cargo.toml`
+also declares `license = "Apache-2.0"` for the workspace crates. (An earlier
+version of this README and its badge said MIT; that was wrong — the
+`LICENSE` file has always been Apache-2.0, and the license file is what
+governs.)
 
 ## Contributing
 
-Contributions welcome. Run `cargo test --workspace` before submitting PRs.
+`cargo test --workspace` is what CI runs and what a PR touching the Rust
+crates should pass locally first. If you're touching the C sources or the
+Python scripts, run the commands under "Build and test" above directly —
+they aren't wired into CI, so nothing else will catch a break.
 
----
+## Related repositories
 
-*Same bytecode, different shells.* 🦀
-
-## Ecosystem
-
-This repo is part of the **SuperInstance** flagship ecosystem — agent-first computation, constraint theory, and self-improving runtimes.
-
-### FLUX Runtime Family
-
-| Repo | Language | Description |
-|------|----------|-------------|
-| [flux-runtime](https://github.com/SuperInstance/flux-runtime) | Python | Full FLUX runtime: markdown→bytecode, 2037 tests, zero deps |
-| [flux-core](https://github.com/SuperInstance/flux-core) | Rust | Register-based bytecode VM, deterministic agent computation |
-| [flux-js](https://github.com/SuperInstance/flux-js) | JavaScript | FLUX VM for Node.js and browsers, ~400ns/iter |
-| [flux-compiler](https://github.com/SuperInstance/flux-compiler) | Rust/Python | Formal-methods compiler for safety-critical codegen |
-| [flux-vm](https://github.com/SuperInstance/flux-vm) | Rust | Stack-based constraint-checking VM, 50 opcodes, Turing-incomplete |
-
-### PLATO Engine Family
-
-| Repo | Language | Description |
-|------|----------|-------------|
-| [plato-server](https://github.com/SuperInstance/plato-server) | Python | Knowledge tiles, fleet sync via Matrix, HTTP API |
-| [plato-engine-block](https://github.com/SuperInstance/plato-engine-block) | Rust | Original room runtime: no_std + alloc, builder pattern |
-| [plato-engine-block-c](https://github.com/SuperInstance/plato-engine-block-c) | C99 | Embedded reference: zero heap alloc, bare-metal portable |
-| [plato-engine-block-elixir](https://github.com/SuperInstance/plato-engine-block-elixir) | Elixir | BEAM supervision trees, fault tolerance, hot reload |
-| [plato-runtime-kernel](https://github.com/SuperInstance/plato-runtime-kernel) | Rust | Spatial model: tensor grid, batons, assertion traps |
-
-### Constraint / Theory Family
-
-| Repo | Language | Description |
-|------|----------|-------------|
-| [categorical-agents](https://github.com/SuperInstance/categorical-agents) | Rust | Category theory for agent composition (functors, naturality) |
-| [cuda-constraint-engine](https://github.com/SuperInstance/cuda-constraint-engine) | CUDA/C | GPU constraint checking at 1B+ constraints/sec |
-| [grand-pattern-rs](https://github.com/SuperInstance/grand-pattern-rs) | Rust | Fibonacci dual-direction cellular graph architecture |
-| [lau-hodge-theory](https://github.com/SuperInstance/lau-hodge-theory) | Rust | Hodge decomposition, Betti numbers, spectral sequences |
-| [ternary-science](https://github.com/SuperInstance/ternary-science) | Rust | Experimental evidence for ternary intelligence, 5 conservation laws |
-
-### Agent / Infrastructure Family
-
-| Repo | Language | Description |
-|------|----------|-------------|
-| [construct-core](https://github.com/SuperInstance/construct-core) | Rust | Layered trait system: bare-metal → alloc → async agent runtime |
-| [crab](https://github.com/SuperInstance/crab) | Bash | Agent shell for repo entry/leave (MUD-room metaphor) |
-| [exocortex](https://github.com/SuperInstance/exocortex) | Rust | Persistent cognitive substrate, S3-compatible memory |
-| [git-agent](https://github.com/SuperInstance/git-agent) | Python | The repo IS the agent — autonomous lifecycle via Git |
-| [capitaine-1](https://github.com/SuperInstance/capitaine-1) | TypeScript | Git-native repo-agent, Cloudflare Workers heartbeat |
-| [codespace-edge-rd](https://github.com/SuperInstance/codespace-edge-rd) | Research | Codespace→Edge agent lifecycle and yoke transfer protocols |
-| [git-agent-codespace](https://github.com/SuperInstance/git-agent-codespace) | DevContainer | One-click Codespace template for Git-Agent runtimes |
-
-### Registries
-
-| Registry | Package | Install |
-|----------|---------|---------|
-| **PyPI** | `flux-vm` | `pip install flux-vm` |
-| **crates.io** | `fluxvm` | `cargo add fluxvm` |
-| **npm** | `flux-js` | `npm install flux-js` *(coming soon)* |
-
-### Philosophy & Architecture
-
-- 📖 [AI-Writings](https://github.com/SuperInstance/AI-Writings) — Philosophy, essays, and design rationale
-- 📦 [PACKAGES.md](https://github.com/SuperInstance/SuperInstance/blob/main/PACKAGES.md) — Full package index
+Several other repositories under the same GitHub org (`SuperInstance`) use
+the "FLUX" or "PLATO" name for related but separate projects — different
+codebases, different languages, not audited as part of this review and not
+verified from within this repository. If you're evaluating one of them,
+apply the same standard: read the code, don't take the README's word for it.

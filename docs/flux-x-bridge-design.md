@@ -1,3 +1,13 @@
+# FLUX-X to FLUX-C Bridge — Design Notes
+
+> **Status: not built.** This file used to live at `bridge/flux_bridge.rs`. Despite the
+> extension, it was never Rust source — it is prose with embedded code fences, and it does
+> not compile. It was never a member of the Cargo workspace (see the root `Cargo.toml`) and
+> `cargo build --workspace` does not touch it. It has been moved here and renamed `.md` so it
+> stops looking like source that should build. The Rust below is a sketch of an intended
+> design, not working code. See `bridge/flux_c_to_x.py` for the one part of this bridge idea
+> that is an actual, runnable script.
+
 ### Complete Rust Implementation (No-STD Compatible, Secure)
 This code implements the FLUX-X to FLUX-C bridge with all required security features, following ARM TrustZone SMC principles.
 #### Cargo.toml
