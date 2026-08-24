@@ -1,0 +1,17 @@
+[workspace]
+resolver = "2"
+members = [
+    "flux-ast",
+    "flux-isa",
+    "flux-isa-mini",
+    "flux-isa-std",
+    "flux-isa-edge",
+    "flux-isa-thor",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["SuperInstance Contributors"]
+license = "Apache-2.0"
+repository = "https://github.com/SuperInstance/flux-vm"

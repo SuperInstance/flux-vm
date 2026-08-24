@@ -25,6 +25,9 @@
  * Copyright (c) 2026 SuperInstance
  */
 
+#include "flux_runtime_arm.h"
+#include <stdint.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stddef.h>
 #include "flux_runtime_arm.h"
@@ -143,6 +146,10 @@ int flux_check(
         if (gas_used != NULL) { *gas_used = 0U; }
         return (int)st.fault;
     }
+
+    /* ---- Dispatch loop (bounded by gas) ---- */
+    int result = FLUX_PASS;
+    uint16_t total_gas_used = 0U;
 
     /* ---- Dispatch ---- */
     int result = FLUX_PASS;
