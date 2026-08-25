@@ -1,10 +1,10 @@
+use super::client::{PlatoClient, Tile};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use uuid::Uuid;
-use super::client::{PlatoClient, Tile};
 
 /// Local cache configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -33,6 +33,12 @@ pub struct PlatoCache {
     tiles: Arc<RwLock<HashMap<String, HashMap<Uuid, Tile>>>>,
     /// Tiles created locally while offline.
     pending: Arc<RwLock<Vec<Tile>>>,
+}
+
+impl Default for PlatoCache {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl PlatoCache {
@@ -69,7 +75,10 @@ impl PlatoCache {
     /// Query cached tiles in a room.
     pub async fn query_room(&self, room: &str) -> Vec<Tile> {
         let tiles = self.tiles.read().await;
-        tiles.get(room).map(|m| m.values().cloned().collect()).unwrap_or_default()
+        tiles
+            .get(room)
+            .map(|m| m.values().cloned().collect())
+            .unwrap_or_default()
     }
 
     /// Get pending tiles (those created offline).

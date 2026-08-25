@@ -11,26 +11,26 @@ pub enum FluxOpcode {
     Div = 0x04,
     Mod = 0x05,
     // Comparison
-    Eq  = 0x10,
-    Lt  = 0x11,
-    Gt  = 0x12,
+    Eq = 0x10,
+    Lt = 0x11,
+    Gt = 0x12,
     Lte = 0x13,
     Gte = 0x14,
     // Constraint
-    Assert    = 0x20,
-    Check     = 0x21,
-    Validate  = 0x22,
-    Reject    = 0x23,
+    Assert = 0x20,
+    Check = 0x21,
+    Validate = 0x22,
+    Reject = 0x23,
     // Stack
     Load = 0x30,
     Push = 0x31,
-    Pop  = 0x32,
+    Pop = 0x32,
     // Transform
-    Snap      = 0x40,
-    Quantize  = 0x41,
+    Snap = 0x40,
+    Quantize = 0x41,
     // Control
     Halt = 0xF0,
-    Nop  = 0xFF,
+    Nop = 0xFF,
 }
 
 impl FluxOpcode {

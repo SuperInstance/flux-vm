@@ -1,9 +1,7 @@
-use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Semaphore;
 use tracing::{debug, warn};
-use uuid::Uuid;
 
 use super::{Room, Tile};
 
@@ -13,6 +11,8 @@ pub struct PlatoClient {
     base_url: String,
     http: reqwest::Client,
     semaphore: Arc<Semaphore>,
+    // Held but not yet applied to requests.
+    #[allow(dead_code)]
     timeout: Duration,
 }
 

@@ -39,7 +39,9 @@ pub fn encode(instructions: &[FluxInstruction], buf: &mut [u8]) -> usize {
 /// Returns a slice of `FluxInstruction` pointing into the original buffer.
 /// The buffer must be 4-byte aligned for correct f64 access on ARM.
 pub fn decode(buf: &[u8]) -> Result<&[FluxInstruction], FluxError> {
-    if buf.len() < 4 { return Err(FluxError::InvalidInstruction(0)); }
+    if buf.len() < 4 {
+        return Err(FluxError::InvalidInstruction(0));
+    }
     if buf[0] != MAGIC[0] || buf[1] != MAGIC[1] {
         return Err(FluxError::InvalidInstruction(buf[0]));
     }

@@ -1,7 +1,7 @@
-/// Sonar physics calculations — Mackenzie 1981 sound speed equation
-/// and simplified Francois-Garrison absorption model.
-///
-/// Designed for ARM Cortex-A53/A72 — full f64, no FPU limitations.
+//! Sonar physics calculations — Mackenzie 1981 sound speed equation
+//! and simplified Francois-Garrison absorption model.
+//!
+//! Designed for ARM Cortex-A53/A72 — full f64, no FPU limitations.
 
 /// Mackenzie (1981) equation for speed of sound in seawater.
 ///
@@ -19,9 +19,7 @@ pub fn sound_speed(temp: f64, salinity: f64, depth: f64) -> f64 {
     let s = salinity;
     let d = depth;
 
-    1448.96
-        + 4.591 * t
-        - 5.304e-2 * t * t
+    1448.96 + 4.591 * t - 5.304e-2 * t * t
         + 2.374e-4 * t * t * t
         + 1.340 * (s - 35.0)
         + 1.630e-2 * d
@@ -55,14 +53,14 @@ pub fn absorption(freq_khz: f64, depth: f64, temp: f64, salinity: f64) -> f64 {
     let b = (-(d) / 2000.0).exp(); // depth correction
 
     // Boric acid contribution
-    let a1 = 0.106 * ((f1 * f1 - f * f) / (f1 * f1 + f * f)).abs()
-        * f1
-        * f
+    let a1 = 0.106 * ((f1 * f1 - f * f) / (f1 * f1 + f * f)).abs() * f1 * f
         / (f1 * f1 + f * f).max(1e-10);
     let p1 = 1.0;
 
     // Magnesium sulfate contribution
-    let a2 = 0.52 * (1.0 + t / 43.0) * (s / 35.0)
+    let a2 = 0.52
+        * (1.0 + t / 43.0)
+        * (s / 35.0)
         * ((f2 * f2 - f * f) / (f2 * f2 + f * f)).abs()
         * f2
         * f
@@ -118,7 +116,11 @@ mod tests {
     fn test_sound_speed_surface() {
         // Fresh-ish water at surface: ~1482 m/s at 20°C, 35 PSU, 0m
         let c = sound_speed(20.0, 35.0, 0.0);
-        assert!(c > 1500.0 && c < 1530.0, "Sound speed {} out of expected range", c);
+        assert!(
+            c > 1500.0 && c < 1530.0,
+            "Sound speed {} out of expected range",
+            c
+        );
     }
 
     #[test]
@@ -126,21 +128,32 @@ mod tests {
         // Deep water: should be faster due to pressure
         let c_surface = sound_speed(10.0, 35.0, 0.0);
         let c_deep = sound_speed(10.0, 35.0, 4000.0);
-        assert!(c_deep > c_surface, "Deep water should have higher sound speed");
+        assert!(
+            c_deep > c_surface,
+            "Deep water should have higher sound speed"
+        );
     }
 
     #[test]
     fn test_wavelength() {
         // At 12 kHz, ~1500 m/s → λ ≈ 0.125m
         let wl = wavelength(12.0, 10.0, 35.0, 0.0);
-        assert!(wl > 0.10 && wl < 0.15, "Wavelength {} out of expected range", wl);
+        assert!(
+            wl > 0.10 && wl < 0.15,
+            "Wavelength {} out of expected range",
+            wl
+        );
     }
 
     #[test]
     fn test_travel_time() {
         // 1500m at ~1500 m/s → ~1 second
         let tt = travel_time(1500.0, 10.0, 35.0, 0.0);
-        assert!((tt - 1.0).abs() < 0.05, "Travel time {} not close to 1.0s", tt);
+        assert!(
+            (tt - 1.0).abs() < 0.05,
+            "Travel time {} not close to 1.0s",
+            tt
+        );
     }
 
     #[test]

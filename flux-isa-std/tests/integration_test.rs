@@ -1,4 +1,4 @@
-use flux_isa_std::bytecode::{FluxBytecode, BytecodeMetadata};
+use flux_isa_std::bytecode::{BytecodeMetadata, FluxBytecode};
 use flux_isa_std::gate::{GateConfig, GateVerdict, QualityGate};
 use flux_isa_std::instruction::FluxInstruction;
 use flux_isa_std::opcode::FluxOpCode;
@@ -30,7 +30,8 @@ fn test_compile_and_execute_roundtrip() {
     assert_eq!(decoded.instructions.len(), 7);
 
     let mut vm = FluxVM::with_default_config();
-    vm.execute_bytecode(&decoded).expect("execution should succeed");
+    vm.execute_bytecode(&decoded)
+        .expect("execution should succeed");
     assert_eq!(vm.stack().len(), 0); // print pops
     assert_eq!(vm.output(), &["150"]);
 }
@@ -45,12 +46,11 @@ fn test_file_persistence() {
         FluxInstruction::new(FluxOpCode::Add),
         FluxInstruction::new(FluxOpCode::Halt),
     ];
-    let bc = FluxBytecode::new(instructions)
-        .with_metadata(BytecodeMetadata {
-            created: "2026-05-02".into(),
-            source: Some("test".into()),
-            author: Some("test".into()),
-        });
+    let bc = FluxBytecode::new(instructions).with_metadata(BytecodeMetadata {
+        created: "2026-05-02".into(),
+        source: Some("test".into()),
+        author: Some("test".into()),
+    });
 
     bc.save_to_file(path).expect("save should work");
     let loaded = FluxBytecode::load_from_file(path).expect("load should work");
@@ -167,13 +167,13 @@ fn test_pipeline_batch() {
 #[test]
 fn test_vm_call_ret() {
     let instructions = vec![
-        make_push(5.0),        // 0: push 5
+        make_push(5.0),                                           // 0: push 5
         FluxInstruction::new(FluxOpCode::Call).with_operand(4.0), // 1: call subroutine at 4
-        FluxInstruction::new(FluxOpCode::Halt), // 2: halt
-        FluxInstruction::new(FluxOpCode::Nop),  // 3: padding
-        make_push(10.0),       // 4: subroutine start — push 10
-        FluxInstruction::new(FluxOpCode::Add),  // 5: add
-        FluxInstruction::new(FluxOpCode::Ret),  // 6: return
+        FluxInstruction::new(FluxOpCode::Halt),                   // 2: halt
+        FluxInstruction::new(FluxOpCode::Nop),                    // 3: padding
+        make_push(10.0),                                          // 4: subroutine start — push 10
+        FluxInstruction::new(FluxOpCode::Add),                    // 5: add
+        FluxInstruction::new(FluxOpCode::Ret),                    // 6: return
     ];
 
     let mut vm = FluxVM::with_default_config();
@@ -202,7 +202,7 @@ fn test_vm_memory_ops() {
         make_push(99.0),
         FluxInstruction::new(FluxOpCode::Store).with_operand(1.0), // store to addr 1
         FluxInstruction::new(FluxOpCode::LoadConst).with_operand(0.0), // push addr 0
-        FluxInstruction::new(FluxOpCode::Load), // load from addr 0
+        FluxInstruction::new(FluxOpCode::Load),                    // load from addr 0
         FluxInstruction::new(FluxOpCode::Halt),
     ];
     let mut vm = FluxVM::with_default_config();
@@ -259,17 +259,43 @@ fn test_tracing() {
 #[test]
 fn test_all_opcodes_encode_decode() {
     let opcodes: Vec<FluxOpCode> = vec![
-        FluxOpCode::Push, FluxOpCode::Pop, FluxOpCode::Dup, FluxOpCode::Swap,
-        FluxOpCode::Over, FluxOpCode::Rot, FluxOpCode::Depth,
-        FluxOpCode::Add, FluxOpCode::Sub, FluxOpCode::Mul, FluxOpCode::Div,
-        FluxOpCode::Mod, FluxOpCode::Negate, FluxOpCode::Abs,
-        FluxOpCode::And, FluxOpCode::Or, FluxOpCode::Not, FluxOpCode::Xor, FluxOpCode::Shl,
-        FluxOpCode::Eq, FluxOpCode::Ne, FluxOpCode::Lt, FluxOpCode::Gt,
-        FluxOpCode::Le, FluxOpCode::Ge,
-        FluxOpCode::Jmp, FluxOpCode::Call, FluxOpCode::Ret, FluxOpCode::Halt, FluxOpCode::Nop,
-        FluxOpCode::Load, FluxOpCode::Store, FluxOpCode::LoadConst,
-        FluxOpCode::Assert, FluxOpCode::Check,
-        FluxOpCode::Print, FluxOpCode::Emit,
+        FluxOpCode::Push,
+        FluxOpCode::Pop,
+        FluxOpCode::Dup,
+        FluxOpCode::Swap,
+        FluxOpCode::Over,
+        FluxOpCode::Rot,
+        FluxOpCode::Depth,
+        FluxOpCode::Add,
+        FluxOpCode::Sub,
+        FluxOpCode::Mul,
+        FluxOpCode::Div,
+        FluxOpCode::Mod,
+        FluxOpCode::Negate,
+        FluxOpCode::Abs,
+        FluxOpCode::And,
+        FluxOpCode::Or,
+        FluxOpCode::Not,
+        FluxOpCode::Xor,
+        FluxOpCode::Shl,
+        FluxOpCode::Eq,
+        FluxOpCode::Ne,
+        FluxOpCode::Lt,
+        FluxOpCode::Gt,
+        FluxOpCode::Le,
+        FluxOpCode::Ge,
+        FluxOpCode::Jmp,
+        FluxOpCode::Call,
+        FluxOpCode::Ret,
+        FluxOpCode::Halt,
+        FluxOpCode::Nop,
+        FluxOpCode::Load,
+        FluxOpCode::Store,
+        FluxOpCode::LoadConst,
+        FluxOpCode::Assert,
+        FluxOpCode::Check,
+        FluxOpCode::Print,
+        FluxOpCode::Emit,
     ];
     assert_eq!(opcodes.len(), 37, "Expected 37 opcodes");
     for opcode in &opcodes {

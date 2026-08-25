@@ -1,5 +1,5 @@
 use crate::error::{FluxError, Result};
-use crate::instruction::{FluxInstruction, InstructionMetadata};
+use crate::instruction::FluxInstruction;
 use crate::opcode::FluxOpcode;
 
 /// A collection of FLUX instructions representing a complete program or module.
@@ -38,9 +38,7 @@ impl FluxBytecode {
     /// +-------------------------------------+
     /// ```
     pub fn encode(&self) -> Vec<u8> {
-        let mut buf = Vec::with_capacity(
-            self.instructions.iter().map(|i| i.encoded_size()).sum(),
-        );
+        let mut buf = Vec::with_capacity(self.instructions.iter().map(|i| i.encoded_size()).sum());
 
         for inst in &self.instructions {
             buf.push(inst.opcode as u8);
@@ -74,8 +72,8 @@ impl FluxBytecode {
             let argc = bytes[offset + 1] as usize;
             // bytes[offset + 2] and bytes[offset + 3] are reserved/flags
 
-            let opcode = FluxOpcode::from_u8(opcode_byte)
-                .ok_or(FluxError::InvalidOpcode(opcode_byte))?;
+            let opcode =
+                FluxOpcode::from_u8(opcode_byte).ok_or(FluxError::InvalidOpcode(opcode_byte))?;
 
             let payload_start = offset + 4;
             let payload_end = payload_start + argc * 8;
@@ -218,7 +216,10 @@ impl FluxBytecode {
             ));
 
             if !label_prefix.is_empty() {
-                out.insert_str(out.len() - operand_str.len() - op_str.len() - 10, &label_prefix);
+                out.insert_str(
+                    out.len() - operand_str.len() - op_str.len() - 10,
+                    &label_prefix,
+                );
             }
         }
 

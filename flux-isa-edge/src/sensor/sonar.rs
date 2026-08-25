@@ -38,9 +38,7 @@ pub fn mackenzie_sound_speed(temp_c: f64, salinity_psu: f64, depth_m: f64) -> f6
     let t = temp_c;
     let s = salinity_psu;
     let d = depth_m;
-    1448.96
-        + 4.591 * t
-        - 5.304e-2 * t * t
+    1448.96 + 4.591 * t - 5.304e-2 * t * t
         + 2.374e-4 * t * t * t
         + 1.340 * (s - 35.0)
         + 1.630e-2 * d
@@ -50,7 +48,12 @@ pub fn mackenzie_sound_speed(temp_c: f64, salinity_psu: f64, depth_m: f64) -> f6
 }
 
 /// Francois-Garrison 1982 absorption coefficient (dB/km).
-pub fn francois_garrison_absorption(frequency_khz: f64, temp_c: f64, salinity_psu: f64, depth_m: f64) -> f64 {
+pub fn francois_garrison_absorption(
+    frequency_khz: f64,
+    temp_c: f64,
+    salinity_psu: f64,
+    depth_m: f64,
+) -> f64 {
     let f = frequency_khz;
     let t = temp_c;
     let s = salinity_psu;
@@ -101,11 +104,11 @@ impl SonarSensor {
     pub fn compile_validation(config: &SonarConfig) -> Bytecode {
         // Program: read value, push min, push max, VALIDATE, ASSERT, HALT
         let instructions = vec![
-            Instruction::new(OpCode::Input),                              // push reading
-            Instruction::with_operand(OpCode::Push, config.min_range_m),  // min bound
-            Instruction::with_operand(OpCode::Push, config.max_range_m),  // max bound
-            Instruction::new(OpCode::Validate),                           // check [min, max]
-            Instruction::new(OpCode::Assert),                             // assert valid
+            Instruction::new(OpCode::Input), // push reading
+            Instruction::with_operand(OpCode::Push, config.min_range_m), // min bound
+            Instruction::with_operand(OpCode::Push, config.max_range_m), // max bound
+            Instruction::new(OpCode::Validate), // check [min, max]
+            Instruction::new(OpCode::Assert), // assert valid
             Instruction::new(OpCode::Halt),
         ];
         Bytecode::new(instructions).with_label("sonar-validation")

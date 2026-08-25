@@ -92,9 +92,7 @@ impl BatchSonarPhysics {
 /// Mackenzie equation for sound speed in seawater (m/s).
 /// Valid: 0 < T < 30°C, 0 < S < 40 ppt, 0 < D < 8000m
 fn mackenzie_sound_speed(depth: f64, temperature: f64, salinity: f64) -> f64 {
-    1448.96
-        + 4.591 * temperature
-        - 5.304e-2 * temperature.powi(2)
+    1448.96 + 4.591 * temperature - 5.304e-2 * temperature.powi(2)
         + 2.374e-4 * temperature.powi(3)
         + 1.340 * (salinity - 35.0)
         + 1.630e-2 * depth
@@ -163,6 +161,8 @@ mod tests {
             .collect();
         let results = engine.compute_batch(&params).await;
         assert_eq!(results.len(), 100);
-        assert!(results.iter().all(|r| r.sound_speed > 1400.0 && r.sound_speed < 1600.0));
+        assert!(results
+            .iter()
+            .all(|r| r.sound_speed > 1400.0 && r.sound_speed < 1600.0));
     }
 }

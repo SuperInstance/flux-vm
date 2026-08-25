@@ -16,13 +16,25 @@ pub struct SignalRef {
 
 impl SignalRef {
     pub fn local(name: &str) -> Self {
-        SignalRef { name: name.to_string(), index: None, agent: None }
+        SignalRef {
+            name: name.to_string(),
+            index: None,
+            agent: None,
+        }
     }
     pub fn indexed(name: &str, idx: usize) -> Self {
-        SignalRef { name: name.to_string(), index: Some(idx), agent: None }
+        SignalRef {
+            name: name.to_string(),
+            index: Some(idx),
+            agent: None,
+        }
     }
     pub fn remote(name: &str, agent: &str) -> Self {
-        SignalRef { name: name.to_string(), index: None, agent: Some(agent.to_string()) }
+        SignalRef {
+            name: name.to_string(),
+            index: None,
+            agent: Some(agent.to_string()),
+        }
     }
 }
 
@@ -95,9 +107,9 @@ pub enum Relation {
 /// Delegation protocol
 #[derive(Debug, Clone, PartialEq)]
 pub enum DelegateProtocol {
-    Sync,       // Block until result
-    Async,      // Fire and check later
-    CoIterate,  // Collaborative solving
+    Sync,      // Block until result
+    Async,     // Fire and check later
+    CoIterate, // Collaborative solving
 }
 
 /// Convergence criteria for co-iteration
@@ -111,9 +123,9 @@ pub enum ConvergenceCriteria {
 /// Conflict resolution policy
 #[derive(Debug, Clone, PartialEq)]
 pub enum ResolutionPolicy {
-    Priority,   // Higher severity wins
-    Voting,     // Majority rules
-    Arbiter(String),  // Named arbiter agent
+    Priority,        // Higher severity wins
+    Voting,          // Majority rules
+    Arbiter(String), // Named arbiter agent
 }
 
 /// Core AST node types
@@ -203,7 +215,9 @@ impl ConstraintNode {
     /// Count leaf constraints (non-combinator nodes)
     pub fn leaf_count(&self) -> usize {
         match self {
-            ConstraintNode::And(cs) | ConstraintNode::Or(cs) => cs.iter().map(|c| c.leaf_count()).sum(),
+            ConstraintNode::And(cs) | ConstraintNode::Or(cs) => {
+                cs.iter().map(|c| c.leaf_count()).sum()
+            }
             ConstraintNode::Not(c) => c.leaf_count(),
             ConstraintNode::Implies(a, b) => a.leaf_count() + b.leaf_count(),
             ConstraintNode::CoIterate { .. } => 0, // meta-node
@@ -219,13 +233,15 @@ impl ConstraintNode {
             ConstraintNode::Relation(r) => r.severity,
             ConstraintNode::Confidence(c) => c.severity,
             ConstraintNode::Semantic(s) => s.severity,
-            ConstraintNode::And(cs) | ConstraintNode::Or(cs) => {
-                cs.iter().map(|c| c.max_severity()).max_by_key(|s| match s {
+            ConstraintNode::And(cs) | ConstraintNode::Or(cs) => cs
+                .iter()
+                .map(|c| c.max_severity())
+                .max_by_key(|s| match s {
                     Severity::Hard => 2,
                     Severity::Soft => 1,
                     Severity::Default => 0,
-                }).unwrap_or(Severity::Default)
-            }
+                })
+                .unwrap_or(Severity::Default),
             ConstraintNode::Not(c) => c.max_severity(),
             ConstraintNode::Implies(a, b) => {
                 let sa = a.max_severity();
@@ -244,7 +260,9 @@ impl ConstraintNode {
     pub fn is_distributed(&self) -> bool {
         match self {
             ConstraintNode::Delegate(_) | ConstraintNode::CoIterate(_) => true,
-            ConstraintNode::And(cs) | ConstraintNode::Or(cs) => cs.iter().any(|c| c.is_distributed()),
+            ConstraintNode::And(cs) | ConstraintNode::Or(cs) => {
+                cs.iter().any(|c| c.is_distributed())
+            }
             ConstraintNode::Not(c) => c.is_distributed(),
             ConstraintNode::Implies(a, b) => a.is_distributed() || b.is_distributed(),
             ConstraintNode::Relation(r) => r.signal_a.agent.is_some() || r.signal_b.agent.is_some(),
@@ -320,14 +338,12 @@ mod tests {
     fn co_iterate_node() {
         let node = ConstraintNode::CoIterate(CoIterateNode {
             agents: vec!["agent_a".to_string(), "agent_b".to_string()],
-            constraints: vec![
-                ConstraintNode::Bound(BoundNode {
-                    signal: SignalRef::local("x"),
-                    lower: Value::Integer(0),
-                    upper: Value::Integer(100),
-                    severity: Severity::Hard,
-                }),
-            ],
+            constraints: vec![ConstraintNode::Bound(BoundNode {
+                signal: SignalRef::local("x"),
+                lower: Value::Integer(0),
+                upper: Value::Integer(100),
+                severity: Severity::Hard,
+            })],
             convergence: ConvergenceCriteria::MaxIterations(100),
             conflict_resolution: ResolutionPolicy::Priority,
         });
@@ -338,7 +354,10 @@ mod tests {
     fn signal_ref_display() {
         assert_eq!(SignalRef::local("velocity").to_string(), "velocity");
         assert_eq!(SignalRef::indexed("tensor", 3).to_string(), "tensor[3]");
-        assert_eq!(SignalRef::remote("altitude", "navigator").to_string(), "navigator.altitude");
+        assert_eq!(
+            SignalRef::remote("altitude", "navigator").to_string(),
+            "navigator.altitude"
+        );
     }
 
     #[test]
@@ -359,10 +378,10 @@ mod tests {
 /// Temporal failure mode — not every failure is a catastrophe
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TemporalFault {
-    Timeout,         // Deadline exceeded
-    WatchExpired,    // Watched signal didn't change in time
-    StaleValue,      // Value received but too old
-    DriftExceeded,   // Signal drifting beyond threshold
+    Timeout,       // Deadline exceeded
+    WatchExpired,  // Watched signal didn't change in time
+    StaleValue,    // Value received but too old
+    DriftExceeded, // Signal drifting beyond threshold
 }
 
 /// Checkpoint for state reversion
@@ -378,7 +397,7 @@ pub struct Checkpoint {
 pub struct TemporalBoundNode {
     pub inner: BoundNode,
     pub deadline_cycles: u32,
-    pub on_timeout: Box<ConstraintNode>,  // fallback constraint
+    pub on_timeout: Box<ConstraintNode>, // fallback constraint
 }
 
 /// Temporal delegate: delegate with timeout and revert semantics
@@ -389,16 +408,16 @@ pub struct TemporalDelegateNode {
     pub constraint: Box<ConstraintNode>,
     pub protocol: DelegateProtocol,
     pub deadline_cycles: u32,
-    pub on_timeout: Box<ConstraintNode>,  // degraded mode
+    pub on_timeout: Box<ConstraintNode>, // degraded mode
 }
 
 /// Drift monitor: detect constraint violations BEFORE they happen
 #[derive(Debug, Clone, PartialEq)]
 pub struct DriftMonitorNode {
     pub signal: SignalRef,
-    pub checkpoint: String,          // named checkpoint reference
-    pub warning_threshold: Value,     // switch to degraded mode
-    pub violation_threshold: Value,   // hard fault
+    pub checkpoint: String,         // named checkpoint reference
+    pub warning_threshold: Value,   // switch to degraded mode
+    pub violation_threshold: Value, // hard fault
     pub severity: Severity,
 }
 
@@ -406,7 +425,10 @@ impl ConstraintNode {
     /// Check if this node has temporal semantics (deadlines, checkpoints, watches)
     pub fn has_temporal(&self) -> bool {
         match self {
-            ConstraintNode::Delegate(d) => matches!(d.protocol, DelegateProtocol::Async | DelegateProtocol::CoIterate),
+            ConstraintNode::Delegate(d) => matches!(
+                d.protocol,
+                DelegateProtocol::Async | DelegateProtocol::CoIterate
+            ),
             ConstraintNode::And(cs) | ConstraintNode::Or(cs) => cs.iter().any(|c| c.has_temporal()),
             ConstraintNode::Not(c) => c.has_temporal(),
             ConstraintNode::Implies(a, b) => a.has_temporal() || b.has_temporal(),

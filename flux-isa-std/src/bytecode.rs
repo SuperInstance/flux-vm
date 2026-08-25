@@ -73,7 +73,7 @@ impl FluxBytecode {
                 reason: "Bytecode too short".into(),
             });
         }
-        if &bytes[0..4] != &FLUX_MAGIC {
+        if bytes[0..4] != FLUX_MAGIC {
             return Err(BytecodeError::InvalidMagic);
         }
         let version = u16::from_le_bytes([bytes[4], bytes[5]]);
@@ -84,12 +84,8 @@ impl FluxBytecode {
         let mut instructions = Vec::with_capacity(count);
         let mut offset = 10;
         for _ in 0..count {
-            let (instr, consumed) = FluxInstruction::decode(bytes, offset).map_err(|e| {
-                BytecodeError::DecodeError {
-                    offset,
-                    reason: e,
-                }
-            })?;
+            let (instr, consumed) = FluxInstruction::decode(bytes, offset)
+                .map_err(|e| BytecodeError::DecodeError { offset, reason: e })?;
             instructions.push(instr);
             offset += consumed;
         }
@@ -108,7 +104,10 @@ impl FluxBytecode {
             if instr.operands.len() < expected {
                 return Err(BytecodeError::ValidationError(format!(
                     "Instruction {} ({}): expected at least {} operands, got {}",
-                    i, instr.opcode, expected, instr.operands.len()
+                    i,
+                    instr.opcode,
+                    expected,
+                    instr.operands.len()
                 )));
             }
             // Check jump targets
@@ -118,7 +117,10 @@ impl FluxBytecode {
                     if t >= self.instructions.len() {
                         return Err(BytecodeError::ValidationError(format!(
                             "Instruction {} ({}): jump target {} out of range (max {})",
-                            i, instr.opcode, t, self.instructions.len() - 1
+                            i,
+                            instr.opcode,
+                            t,
+                            self.instructions.len() - 1
                         )));
                     }
                 }

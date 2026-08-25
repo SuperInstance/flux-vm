@@ -121,21 +121,17 @@ fn backtrack_solve(instance: &CspInstance) -> Option<Vec<(String, f64)>> {
     }
 }
 
-fn backtrack_recursive(
-    instance: &CspInstance,
-    assignment: &mut [Option<f64>],
-    idx: usize,
-) -> bool {
+fn backtrack_recursive(instance: &CspInstance, assignment: &mut [Option<f64>], idx: usize) -> bool {
     if idx >= instance.variables.len() {
         return check_constraints(instance, assignment);
     }
 
     for &val in &instance.domains[idx] {
         assignment[idx] = Some(val);
-        if check_constraints_partial(instance, assignment, idx) {
-            if backtrack_recursive(instance, assignment, idx + 1) {
-                return true;
-            }
+        if check_constraints_partial(instance, assignment, idx)
+            && backtrack_recursive(instance, assignment, idx + 1)
+        {
+            return true;
         }
     }
     assignment[idx] = None;
@@ -160,14 +156,15 @@ fn check_constraints_partial(
 ) -> bool {
     // Only check constraints where all involved variables are assigned
     instance.constraints.iter().all(|c| {
-        let all_assigned = c
-            .var_indices
-            .iter()
-            .all(|&i| assignment[i].is_some());
+        let all_assigned = c.var_indices.iter().all(|&i| assignment[i].is_some());
         if !all_assigned {
             return true; // Can't evaluate yet
         }
-        let vals: Vec<f64> = c.var_indices.iter().map(|&i| assignment[i].unwrap()).collect();
+        let vals: Vec<f64> = c
+            .var_indices
+            .iter()
+            .map(|&i| assignment[i].unwrap())
+            .collect();
         evaluate_constraint(&c.relation, &c.params, &vals)
     })
 }
@@ -178,12 +175,10 @@ fn evaluate_constraint(rel: &ConstraintRelation, params: &[f64], vals: &[f64]) -
     }
     match rel {
         ConstraintRelation::LessThan => vals[0] < params.first().copied().unwrap_or(f64::MAX),
-        ConstraintRelation::Equal => {
-            vals.windows(2).all(|w| (w[0] - w[1]).abs() < f64::EPSILON)
+        ConstraintRelation::Equal => vals.windows(2).all(|w| (w[0] - w[1]).abs() < f64::EPSILON),
+        ConstraintRelation::NotEqual => {
+            vals.windows(2).all(|w| (w[0] - w[1]).abs() >= f64::EPSILON)
         }
-        ConstraintRelation::NotEqual => vals
-            .windows(2)
-            .all(|w| (w[0] - w[1]).abs() >= f64::EPSILON),
         ConstraintRelation::SumEquals => {
             let sum: f64 = vals.iter().sum();
             let target = params.first().copied().unwrap_or(0.0);

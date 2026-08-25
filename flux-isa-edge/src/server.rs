@@ -1,16 +1,19 @@
-use std::sync::Arc;
-use std::time::Instant;
-use axum::{
-    Json, Router,
-    extract::{State, WebSocketUpgrade, ws::{Message, WebSocket}},
-    response::IntoResponse,
-    routing::{get, post},
-};
-use serde::{Deserialize, Serialize};
-use tokio::sync::RwLock;
-use tower_http::cors::CorsLayer;
 use crate::bytecode::Bytecode;
 use crate::vm::{ExecutionLimits, Vm};
+use axum::{
+    extract::{
+        ws::{Message, WebSocket},
+        State, WebSocketUpgrade,
+    },
+    response::IntoResponse,
+    routing::{get, post},
+    Json, Router,
+};
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use std::time::Instant;
+use tokio::sync::RwLock;
+use tower_http::cors::CorsLayer;
 
 /// Shared server state.
 #[derive(Clone)]
@@ -105,7 +108,9 @@ async fn validate_handler(
     State(state): State<SharedState>,
     Json(req): Json<ValidateRequest>,
 ) -> impl IntoResponse {
-    let valid: Vec<bool> = req.values.iter()
+    let valid: Vec<bool> = req
+        .values
+        .iter()
         .map(|&v| v >= req.min && v <= req.max)
         .collect();
     let violation_count = valid.iter().filter(|&&v| !v).count();
@@ -126,9 +131,7 @@ async fn validate_handler(
     })
 }
 
-async fn status_handler(
-    State(state): State<SharedState>,
-) -> impl IntoResponse {
+async fn status_handler(State(state): State<SharedState>) -> impl IntoResponse {
     let tp = *state.tiles_processed.read().await;
     let cv = *state.constraint_violations.read().await;
     Json(StatusResponse {
@@ -140,18 +143,14 @@ async fn status_handler(
     })
 }
 
-async fn health_handler(
-    State(state): State<SharedState>,
-) -> impl IntoResponse {
+async fn health_handler(State(state): State<SharedState>) -> impl IntoResponse {
     Json(HealthResponse {
         status: "ok".into(),
         node_id: state.node_id.clone(),
     })
 }
 
-async fn ws_stream_handler(
-    ws: WebSocketUpgrade,
-) -> impl IntoResponse {
+async fn ws_stream_handler(ws: WebSocketUpgrade) -> impl IntoResponse {
     ws.on_upgrade(handle_socket)
 }
 

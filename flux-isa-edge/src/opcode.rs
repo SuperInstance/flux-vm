@@ -1,77 +1,100 @@
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
-use serde::{Deserialize, Serialize};
 
 /// All 35 FLUX ISA opcodes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum OpCode {
     // ── Stack / value ──────────────────────────────
-    Push      = 0x01,
-    Pop       = 0x02,
-    Dup       = 0x03,
-    Swap      = 0x04,
-    Load      = 0x05,
-    Store     = 0x06,
+    Push = 0x01,
+    Pop = 0x02,
+    Dup = 0x03,
+    Swap = 0x04,
+    Load = 0x05,
+    Store = 0x06,
 
     // ── Arithmetic ─────────────────────────────────
-    Add       = 0x10,
-    Sub       = 0x11,
-    Mul       = 0x12,
-    Div       = 0x13,
-    Mod       = 0x14,
-    Neg       = 0x15,
+    Add = 0x10,
+    Sub = 0x11,
+    Mul = 0x12,
+    Div = 0x13,
+    Mod = 0x14,
+    Neg = 0x15,
 
     // ── Comparison ─────────────────────────────────
-    Eq        = 0x20,
-    Ne        = 0x21,
-    Lt        = 0x22,
-    Le        = 0x23,
-    Gt        = 0x24,
-    Ge        = 0x25,
+    Eq = 0x20,
+    Ne = 0x21,
+    Lt = 0x22,
+    Le = 0x23,
+    Gt = 0x24,
+    Ge = 0x25,
 
     // ── Logic ──────────────────────────────────────
-    And       = 0x30,
-    Or        = 0x31,
-    Not       = 0x32,
+    And = 0x30,
+    Or = 0x31,
+    Not = 0x32,
 
     // ── Constraint ─────────────────────────────────
-    Validate  = 0x40,
-    Assert    = 0x41,
+    Validate = 0x40,
+    Assert = 0x41,
     Tolerance = 0x42,
-    Clamp     = 0x43,
+    Clamp = 0x43,
 
     // ── Control flow ───────────────────────────────
-    Jump      = 0x50,
-    JumpIf    = 0x51,
-    Call      = 0x52,
-    Ret       = 0x53,
-    Halt      = 0x54,
+    Jump = 0x50,
+    JumpIf = 0x51,
+    Call = 0x52,
+    Ret = 0x53,
+    Halt = 0x54,
 
     // ── I/O ────────────────────────────────────────
-    Input     = 0x60,
-    Output    = 0x61,
+    Input = 0x60,
+    Output = 0x61,
 
     // ── Extended ───────────────────────────────────
-    Sync      = 0x70,
-    Nop       = 0x00,
+    Sync = 0x70,
+    Nop = 0x00,
 }
 
 impl OpCode {
     /// All opcodes in definition order.
     pub fn all() -> &'static [OpCode] {
         &[
-            OpCode::Push, OpCode::Pop, OpCode::Dup, OpCode::Swap,
-            OpCode::Load, OpCode::Store,
-            OpCode::Add, OpCode::Sub, OpCode::Mul, OpCode::Div,
-            OpCode::Mod, OpCode::Neg,
-            OpCode::Eq, OpCode::Ne, OpCode::Lt, OpCode::Le,
-            OpCode::Gt, OpCode::Ge,
-            OpCode::And, OpCode::Or, OpCode::Not,
-            OpCode::Validate, OpCode::Assert, OpCode::Tolerance, OpCode::Clamp,
-            OpCode::Jump, OpCode::JumpIf, OpCode::Call, OpCode::Ret, OpCode::Halt,
-            OpCode::Input, OpCode::Output,
-            OpCode::Sync, OpCode::Nop,
+            OpCode::Push,
+            OpCode::Pop,
+            OpCode::Dup,
+            OpCode::Swap,
+            OpCode::Load,
+            OpCode::Store,
+            OpCode::Add,
+            OpCode::Sub,
+            OpCode::Mul,
+            OpCode::Div,
+            OpCode::Mod,
+            OpCode::Neg,
+            OpCode::Eq,
+            OpCode::Ne,
+            OpCode::Lt,
+            OpCode::Le,
+            OpCode::Gt,
+            OpCode::Ge,
+            OpCode::And,
+            OpCode::Or,
+            OpCode::Not,
+            OpCode::Validate,
+            OpCode::Assert,
+            OpCode::Tolerance,
+            OpCode::Clamp,
+            OpCode::Jump,
+            OpCode::JumpIf,
+            OpCode::Call,
+            OpCode::Ret,
+            OpCode::Halt,
+            OpCode::Input,
+            OpCode::Output,
+            OpCode::Sync,
+            OpCode::Nop,
         ]
     }
 
@@ -121,17 +144,21 @@ impl OpCode {
 
     pub fn group(self) -> &'static str {
         match self {
-            OpCode::Push | OpCode::Pop | OpCode::Dup | OpCode::Swap
-            | OpCode::Load | OpCode::Store => "stack",
-            OpCode::Add | OpCode::Sub | OpCode::Mul | OpCode::Div
-            | OpCode::Mod | OpCode::Neg => "arithmetic",
-            OpCode::Eq | OpCode::Ne | OpCode::Lt | OpCode::Le
-            | OpCode::Gt | OpCode::Ge => "comparison",
+            OpCode::Push
+            | OpCode::Pop
+            | OpCode::Dup
+            | OpCode::Swap
+            | OpCode::Load
+            | OpCode::Store => "stack",
+            OpCode::Add | OpCode::Sub | OpCode::Mul | OpCode::Div | OpCode::Mod | OpCode::Neg => {
+                "arithmetic"
+            }
+            OpCode::Eq | OpCode::Ne | OpCode::Lt | OpCode::Le | OpCode::Gt | OpCode::Ge => {
+                "comparison"
+            }
             OpCode::And | OpCode::Or | OpCode::Not => "logic",
-            OpCode::Validate | OpCode::Assert | OpCode::Tolerance
-            | OpCode::Clamp => "constraint",
-            OpCode::Jump | OpCode::JumpIf | OpCode::Call
-            | OpCode::Ret | OpCode::Halt => "control",
+            OpCode::Validate | OpCode::Assert | OpCode::Tolerance | OpCode::Clamp => "constraint",
+            OpCode::Jump | OpCode::JumpIf | OpCode::Call | OpCode::Ret | OpCode::Halt => "control",
             OpCode::Input | OpCode::Output => "io",
             OpCode::Sync | OpCode::Nop => "extended",
         }
@@ -141,40 +168,40 @@ impl OpCode {
 impl fmt::Display for OpCode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            OpCode::Push      => "PUSH",
-            OpCode::Pop       => "POP",
-            OpCode::Dup       => "DUP",
-            OpCode::Swap      => "SWAP",
-            OpCode::Load      => "LOAD",
-            OpCode::Store     => "STORE",
-            OpCode::Add       => "ADD",
-            OpCode::Sub       => "SUB",
-            OpCode::Mul       => "MUL",
-            OpCode::Div       => "DIV",
-            OpCode::Mod       => "MOD",
-            OpCode::Neg       => "NEG",
-            OpCode::Eq        => "EQ",
-            OpCode::Ne        => "NE",
-            OpCode::Lt        => "LT",
-            OpCode::Le        => "LE",
-            OpCode::Gt        => "GT",
-            OpCode::Ge        => "GE",
-            OpCode::And       => "AND",
-            OpCode::Or        => "OR",
-            OpCode::Not       => "NOT",
-            OpCode::Validate  => "VALIDATE",
-            OpCode::Assert    => "ASSERT",
+            OpCode::Push => "PUSH",
+            OpCode::Pop => "POP",
+            OpCode::Dup => "DUP",
+            OpCode::Swap => "SWAP",
+            OpCode::Load => "LOAD",
+            OpCode::Store => "STORE",
+            OpCode::Add => "ADD",
+            OpCode::Sub => "SUB",
+            OpCode::Mul => "MUL",
+            OpCode::Div => "DIV",
+            OpCode::Mod => "MOD",
+            OpCode::Neg => "NEG",
+            OpCode::Eq => "EQ",
+            OpCode::Ne => "NE",
+            OpCode::Lt => "LT",
+            OpCode::Le => "LE",
+            OpCode::Gt => "GT",
+            OpCode::Ge => "GE",
+            OpCode::And => "AND",
+            OpCode::Or => "OR",
+            OpCode::Not => "NOT",
+            OpCode::Validate => "VALIDATE",
+            OpCode::Assert => "ASSERT",
             OpCode::Tolerance => "TOLERANCE",
-            OpCode::Clamp     => "CLAMP",
-            OpCode::Jump      => "JUMP",
-            OpCode::JumpIf    => "JUMP_IF",
-            OpCode::Call      => "CALL",
-            OpCode::Ret       => "RET",
-            OpCode::Halt      => "HALT",
-            OpCode::Input     => "INPUT",
-            OpCode::Output    => "OUTPUT",
-            OpCode::Sync      => "SYNC",
-            OpCode::Nop       => "NOP",
+            OpCode::Clamp => "CLAMP",
+            OpCode::Jump => "JUMP",
+            OpCode::JumpIf => "JUMP_IF",
+            OpCode::Call => "CALL",
+            OpCode::Ret => "RET",
+            OpCode::Halt => "HALT",
+            OpCode::Input => "INPUT",
+            OpCode::Output => "OUTPUT",
+            OpCode::Sync => "SYNC",
+            OpCode::Nop => "NOP",
         };
         f.write_str(s)
     }
@@ -184,41 +211,41 @@ impl FromStr for OpCode {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
-            "PUSH"      => Ok(OpCode::Push),
-            "POP"       => Ok(OpCode::Pop),
-            "DUP"       => Ok(OpCode::Dup),
-            "SWAP"      => Ok(OpCode::Swap),
-            "LOAD"      => Ok(OpCode::Load),
-            "STORE"     => Ok(OpCode::Store),
-            "ADD"       => Ok(OpCode::Add),
-            "SUB"       => Ok(OpCode::Sub),
-            "MUL"       => Ok(OpCode::Mul),
-            "DIV"       => Ok(OpCode::Div),
-            "MOD"       => Ok(OpCode::Mod),
-            "NEG"       => Ok(OpCode::Neg),
-            "EQ"        => Ok(OpCode::Eq),
-            "NE"        => Ok(OpCode::Ne),
-            "LT"        => Ok(OpCode::Lt),
-            "LE"        => Ok(OpCode::Le),
-            "GT"        => Ok(OpCode::Gt),
-            "GE"        => Ok(OpCode::Ge),
-            "AND"       => Ok(OpCode::And),
-            "OR"        => Ok(OpCode::Or),
-            "NOT"       => Ok(OpCode::Not),
-            "VALIDATE"  => Ok(OpCode::Validate),
-            "ASSERT"    => Ok(OpCode::Assert),
+            "PUSH" => Ok(OpCode::Push),
+            "POP" => Ok(OpCode::Pop),
+            "DUP" => Ok(OpCode::Dup),
+            "SWAP" => Ok(OpCode::Swap),
+            "LOAD" => Ok(OpCode::Load),
+            "STORE" => Ok(OpCode::Store),
+            "ADD" => Ok(OpCode::Add),
+            "SUB" => Ok(OpCode::Sub),
+            "MUL" => Ok(OpCode::Mul),
+            "DIV" => Ok(OpCode::Div),
+            "MOD" => Ok(OpCode::Mod),
+            "NEG" => Ok(OpCode::Neg),
+            "EQ" => Ok(OpCode::Eq),
+            "NE" => Ok(OpCode::Ne),
+            "LT" => Ok(OpCode::Lt),
+            "LE" => Ok(OpCode::Le),
+            "GT" => Ok(OpCode::Gt),
+            "GE" => Ok(OpCode::Ge),
+            "AND" => Ok(OpCode::And),
+            "OR" => Ok(OpCode::Or),
+            "NOT" => Ok(OpCode::Not),
+            "VALIDATE" => Ok(OpCode::Validate),
+            "ASSERT" => Ok(OpCode::Assert),
             "TOLERANCE" => Ok(OpCode::Tolerance),
-            "CLAMP"     => Ok(OpCode::Clamp),
-            "JUMP"      => Ok(OpCode::Jump),
-            "JUMP_IF"   => Ok(OpCode::JumpIf),
-            "CALL"      => Ok(OpCode::Call),
-            "RET"       => Ok(OpCode::Ret),
-            "HALT"      => Ok(OpCode::Halt),
-            "INPUT"     => Ok(OpCode::Input),
-            "OUTPUT"    => Ok(OpCode::Output),
-            "SYNC"      => Ok(OpCode::Sync),
-            "NOP"       => Ok(OpCode::Nop),
-            other       => Err(format!("unknown opcode: {other}")),
+            "CLAMP" => Ok(OpCode::Clamp),
+            "JUMP" => Ok(OpCode::Jump),
+            "JUMP_IF" => Ok(OpCode::JumpIf),
+            "CALL" => Ok(OpCode::Call),
+            "RET" => Ok(OpCode::Ret),
+            "HALT" => Ok(OpCode::Halt),
+            "INPUT" => Ok(OpCode::Input),
+            "OUTPUT" => Ok(OpCode::Output),
+            "SYNC" => Ok(OpCode::Sync),
+            "NOP" => Ok(OpCode::Nop),
+            other => Err(format!("unknown opcode: {other}")),
         }
     }
 }

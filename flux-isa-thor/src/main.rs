@@ -4,10 +4,10 @@ use tracing::{error, info, warn};
 use flux_isa_thor::config::ThorConfig;
 use flux_isa_thor::cuda::GpuDispatcher;
 use flux_isa_thor::fleet::{FleetHandle, FleetNode, NodeRole, NodeStatus};
-use flux_isa_thor::plato::{PlatoHandle, cache::TileCache, client::PlatoClient};
+use flux_isa_thor::pipeline::{Pipeline, PipelineConfig};
+use flux_isa_thor::plato::{cache::TileCache, client::PlatoClient, PlatoHandle};
 use flux_isa_thor::server::{self, AppState};
 use flux_isa_thor::vm::{ThorVm, VmConfig};
-use flux_isa_thor::pipeline::{Pipeline, PipelineConfig};
 
 #[tokio::main]
 async fn main() {
@@ -63,7 +63,9 @@ async fn main() {
         config.plato_max_concurrent,
         std::time::Duration::from_secs(30),
     ));
-    let tile_cache = Arc::new(tokio::sync::RwLock::new(TileCache::new(config.cache_max_entries)));
+    let tile_cache = Arc::new(tokio::sync::RwLock::new(TileCache::new(
+        config.cache_max_entries,
+    )));
     let plato = Arc::new(PlatoHandle::new(plato_client.clone(), tile_cache));
 
     match plato_client.health().await {
@@ -100,7 +102,12 @@ async fn main() {
         max_stack: config.vm_max_stack,
         ..VmConfig::default()
     };
-    let vm = Arc::new(ThorVm::new(vm_config, gpu.clone(), plato.clone(), fleet.clone()));
+    let vm = Arc::new(ThorVm::new(
+        vm_config,
+        gpu.clone(),
+        plato.clone(),
+        fleet.clone(),
+    ));
 
     // ── GPU warmup ───────────────────────────────────────────────
     if config.gpu_available {
@@ -118,7 +125,7 @@ async fn main() {
         batch_size: config.pipeline_batch_size,
     };
     let pipeline = Arc::new(Pipeline::new(pipeline_config));
-    let (tx_input, rx_input) = tokio::sync::mpsc::channel(1024);
+    let (_tx_input, rx_input) = tokio::sync::mpsc::channel(1024);
     pipeline.run(rx_input).await;
     info!("Pipeline started — 5 stages");
 

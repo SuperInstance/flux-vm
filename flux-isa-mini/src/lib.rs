@@ -11,6 +11,6 @@ pub mod opcode;
 pub mod sonar_check;
 pub mod vm;
 
-pub use opcode::FluxOpcode;
 pub use instruction::FluxInstruction;
-pub use vm::{FluxVm, FluxResult, FluxError};
+pub use opcode::FluxOpcode;
+pub use vm::{FluxError, FluxResult, FluxVm};

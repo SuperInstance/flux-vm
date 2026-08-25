@@ -1,6 +1,6 @@
+use crate::instruction::Instruction;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::instruction::Instruction;
 
 /// A compiled FLUX bytecode program.
 #[derive(Debug, Clone, Serialize, Deserialize)]

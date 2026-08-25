@@ -23,11 +23,12 @@ pub async fn run(
 
         // Validate: first byte must be a valid opcode
         if let Some(&first) = item.payload.first() {
-            if crate::opcode::Instruction::from_byte(first).is_none()
-                && item.payload.len() > 1
-            {
+            if crate::opcode::Instruction::from_byte(first).is_none() && item.payload.len() > 1 {
                 // Might be a CSP spec rather than bytecode — allow through
-                debug!("VALIDATE: first byte 0x{:02X} not an opcode, assuming CSP spec", first);
+                debug!(
+                    "VALIDATE: first byte 0x{:02X} not an opcode, assuming CSP spec",
+                    first
+                );
             }
         }
 

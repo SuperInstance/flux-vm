@@ -15,10 +15,7 @@
 #![no_std]
 #![no_main]
 
-use flux_isa_mini::{
-    FluxOpcode, FluxInstruction, FluxVm,
-    sonar_check,
-};
+use flux_isa_mini::{sonar_check, FluxInstruction, FluxOpcode, FluxVm};
 
 // In a real project these come from pac + hal crates:
 // use stm32f411_pac as pac;
@@ -54,11 +51,11 @@ fn main() -> ! {
         // Build constraint program:
         //   LOAD depth → VALIDATE [0, max_depth] → ASSERT → HALT
         let program: [FluxInstruction; 5] = [
-            FluxInstruction::new(FluxOpcode::Load, depth, 0.0),       // push depth
-            FluxInstruction::new(FluxOpcode::Load, 0.0, 0.0),        // push lower bound
-            FluxInstruction::new(FluxOpcode::Load, 200.0, 0.0),      // push upper bound (200m rated)
-            FluxInstruction::new(FluxOpcode::Validate, 0.0, 0.0),    // depth in [0, 200]?
-            FluxInstruction::new(FluxOpcode::Assert, 0.0, 0.0),      // fail fast if out of bounds
+            FluxInstruction::new(FluxOpcode::Load, depth, 0.0), // push depth
+            FluxInstruction::new(FluxOpcode::Load, 0.0, 0.0),   // push lower bound
+            FluxInstruction::new(FluxOpcode::Load, 200.0, 0.0), // push upper bound (200m rated)
+            FluxInstruction::new(FluxOpcode::Validate, 0.0, 0.0), // depth in [0, 200]?
+            FluxInstruction::new(FluxOpcode::Assert, 0.0, 0.0), // fail fast if out of bounds
         ];
 
         // Also run sonar const-checks before bothering the VM

@@ -63,7 +63,11 @@ impl ConstraintVM {
                 FluxOpcode::Sub => self.binop(|a, b| a - b)?,
                 FluxOpcode::Mul => self.binop(|a, b| a * b)?,
                 FluxOpcode::Div => {
-                    let b = self.stack.last().copied().ok_or(FluxError::StackUnderflow)?;
+                    let b = self
+                        .stack
+                        .last()
+                        .copied()
+                        .ok_or(FluxError::StackUnderflow)?;
                     if b == 0.0 {
                         return Err(FluxError::ArithmeticError("division by zero".into()));
                     }
@@ -78,9 +82,10 @@ impl ConstraintVM {
                     self.constraint_results.push(ok);
                     if !ok {
                         let label = instr.metadata.label.clone().unwrap_or_default();
-                        return Err(FluxError::ConstraintViolation(
-                            format!("step {}: {}", ip, label),
-                        ));
+                        return Err(FluxError::ConstraintViolation(format!(
+                            "step {}: {}",
+                            ip, label
+                        )));
                     }
                 }
                 FluxOpcode::Check => {
@@ -91,35 +96,40 @@ impl ConstraintVM {
                 }
                 FluxOpcode::Validate => {
                     let val = self.pop()?;
-                    let min = instr.operands.get(0).copied().unwrap_or(f64::NEG_INFINITY);
+                    let min = instr.operands.first().copied().unwrap_or(f64::NEG_INFINITY);
                     let max = instr.operands.get(1).copied().unwrap_or(f64::INFINITY);
                     let ok = val >= min && val <= max;
                     self.constraint_results.push(ok);
                     self.stack.push(if ok { 1.0 } else { 0.0 });
                 }
                 FluxOpcode::Reject => {
-                    let label = instr.metadata.label.clone().unwrap_or_else(|| "Explicit reject".into());
-                    return Err(FluxError::ConstraintViolation(
-                        format!("step {}: {}", ip, label),
-                    ));
+                    let label = instr
+                        .metadata
+                        .label
+                        .clone()
+                        .unwrap_or_else(|| "Explicit reject".into());
+                    return Err(FluxError::ConstraintViolation(format!(
+                        "step {}: {}",
+                        ip, label
+                    )));
                 }
 
                 // Flow control
                 FluxOpcode::Jump => {
-                    let target = instr.operands.get(0).copied().unwrap_or(0.0) as usize;
+                    let target = instr.operands.first().copied().unwrap_or(0.0) as usize;
                     ip = target;
                     continue;
                 }
                 FluxOpcode::Branch => {
                     let cond = self.pop()?;
-                    let target = instr.operands.get(0).copied().unwrap_or(0.0) as usize;
+                    let target = instr.operands.first().copied().unwrap_or(0.0) as usize;
                     if cond != 0.0 {
                         ip = target;
                         continue;
                     }
                 }
                 FluxOpcode::Call => {
-                    let target = instr.operands.get(0).copied().unwrap_or(0.0) as usize;
+                    let target = instr.operands.first().copied().unwrap_or(0.0) as usize;
                     self.call_stack.push(ip + 1);
                     ip = target;
                     continue;
@@ -135,16 +145,20 @@ impl ConstraintVM {
 
                 // Memory / Stack
                 FluxOpcode::Load => {
-                    let val = instr.operands.get(0).copied().unwrap_or(0.0);
+                    let val = instr.operands.first().copied().unwrap_or(0.0);
                     self.stack.push(val);
                 }
-                FluxOpcode::Store => { let _ = self.pop()?; }
+                FluxOpcode::Store => {
+                    let _ = self.pop()?;
+                }
                 FluxOpcode::Push => {
                     for &v in &instr.operands {
                         self.stack.push(v);
                     }
                 }
-                FluxOpcode::Pop => { self.pop()?; }
+                FluxOpcode::Pop => {
+                    self.pop()?;
+                }
                 FluxOpcode::Swap => {
                     let len = self.stack.len();
                     if len >= 2 {
@@ -159,23 +173,41 @@ impl ConstraintVM {
                 }
                 FluxOpcode::Quantize => {
                     let val = self.pop()?;
-                    let step = instr.operands.get(0).copied().unwrap_or(1.0);
+                    let step = instr.operands.first().copied().unwrap_or(1.0);
                     self.stack.push((val / step).round() * step);
                 }
                 FluxOpcode::Cast | FluxOpcode::Promote => {}
 
                 // Logic
-                FluxOpcode::And => self.binop(|a, b| if a != 0.0 && b != 0.0 { 1.0 } else { 0.0 })?,
-                FluxOpcode::Or => self.binop(|a, b| if a != 0.0 || b != 0.0 { 1.0 } else { 0.0 })?,
+                FluxOpcode::And => {
+                    self.binop(|a, b| if a != 0.0 && b != 0.0 { 1.0 } else { 0.0 })?
+                }
+                FluxOpcode::Or => {
+                    self.binop(|a, b| if a != 0.0 || b != 0.0 { 1.0 } else { 0.0 })?
+                }
                 FluxOpcode::Not => {
                     let val = self.pop()?;
                     self.stack.push(if val == 0.0 { 1.0 } else { 0.0 });
                 }
-                FluxOpcode::Xor => self.binop(|a, b| if (a != 0.0) != (b != 0.0) { 1.0 } else { 0.0 })?,
+                FluxOpcode::Xor => {
+                    self.binop(|a, b| if (a != 0.0) != (b != 0.0) { 1.0 } else { 0.0 })?
+                }
 
                 // Compare
-                FluxOpcode::Eq => self.binop(|a, b| if (a - b).abs() < f64::EPSILON { 1.0 } else { 0.0 })?,
-                FluxOpcode::Neq => self.binop(|a, b| if (a - b).abs() >= f64::EPSILON { 1.0 } else { 0.0 })?,
+                FluxOpcode::Eq => self.binop(|a, b| {
+                    if (a - b).abs() < f64::EPSILON {
+                        1.0
+                    } else {
+                        0.0
+                    }
+                })?,
+                FluxOpcode::Neq => self.binop(|a, b| {
+                    if (a - b).abs() >= f64::EPSILON {
+                        1.0
+                    } else {
+                        0.0
+                    }
+                })?,
                 FluxOpcode::Lt => self.binop(|a, b| if a < b { 1.0 } else { 0.0 })?,
                 FluxOpcode::Gt => self.binop(|a, b| if a > b { 1.0 } else { 0.0 })?,
                 FluxOpcode::Lte => self.binop(|a, b| if a <= b { 1.0 } else { 0.0 })?,
@@ -196,8 +228,8 @@ impl ConstraintVM {
             ip += 1;
         }
 
-        let all_satisfied = !self.constraint_results.is_empty()
-            && self.constraint_results.iter().all(|&r| r);
+        let all_satisfied =
+            !self.constraint_results.is_empty() && self.constraint_results.iter().all(|&r| r);
 
         Ok(VMResult {
             outputs: self.stack.clone(),
@@ -230,7 +262,9 @@ mod tests {
     use crate::instruction::FluxInstruction;
 
     fn make_bc(instrs: Vec<FluxInstruction>) -> FluxBytecode {
-        FluxBytecode { instructions: instrs }
+        FluxBytecode {
+            instructions: instrs,
+        }
     }
 
     #[test]

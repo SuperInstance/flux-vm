@@ -128,7 +128,10 @@ impl FluxVM {
     }
 
     /// Load and execute instruction list
-    pub fn execute_instructions(&mut self, instructions: Vec<FluxInstruction>) -> Result<(), VMError> {
+    pub fn execute_instructions(
+        &mut self,
+        instructions: Vec<FluxInstruction>,
+    ) -> Result<(), VMError> {
         self.instructions = instructions;
         self.reset();
         self.run()
@@ -373,17 +376,26 @@ impl FluxVM {
             FluxOpCode::Assert => {
                 let cond = self.pop("ASSERT")?;
                 if cond == 0.0 {
-                    let msg = instr.operands.first().map(|_| "assertion value was zero")
+                    let msg = instr
+                        .operands
+                        .first()
+                        .map(|_| "assertion value was zero")
                         .unwrap_or("assertion value was zero")
                         .to_string();
-                    return Err(VMError::AssertionFailed { ip: self.ip, message: msg });
+                    return Err(VMError::AssertionFailed {
+                        ip: self.ip,
+                        message: msg,
+                    });
                 }
             }
             FluxOpCode::Check => {
                 let cond = self.pop("CHECK")?;
                 if cond == 0.0 {
                     let msg = "constraint check failed".to_string();
-                    return Err(VMError::ConstraintFailed { ip: self.ip, message: msg });
+                    return Err(VMError::ConstraintFailed {
+                        ip: self.ip,
+                        message: msg,
+                    });
                 }
             }
             FluxOpCode::Print => {

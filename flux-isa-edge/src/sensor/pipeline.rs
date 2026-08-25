@@ -1,9 +1,9 @@
-use std::time::Duration;
-use serde::{Deserialize, Serialize};
-use tokio::sync::mpsc;
-use uuid::Uuid;
 use crate::bytecode::{Bytecode, ExecutionResult};
 use crate::vm::{ExecutionLimits, Vm};
+use serde::{Deserialize, Serialize};
+use std::time::Duration;
+use tokio::sync::mpsc;
+use uuid::Uuid;
 
 /// Source of sensor data.
 pub trait SensorSource: Send + Sync + 'static {
@@ -80,7 +80,12 @@ impl<S: SensorSource> Pipeline<S> {
         config: PipelineConfig,
         vm_limits: ExecutionLimits,
     ) -> Self {
-        Pipeline { sensor, bytecode, config, vm_limits }
+        Pipeline {
+            sensor,
+            bytecode,
+            config,
+            vm_limits,
+        }
     }
 
     /// Run the pipeline, sending results to the provided channel.

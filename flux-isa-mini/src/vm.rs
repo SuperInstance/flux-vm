@@ -34,12 +34,19 @@ pub enum FluxError {
 /// The FLUX virtual machine.
 pub struct FluxVm {
     stack: [f64; STACK_SIZE],
-    sp: usize,  // stack pointer (next free slot)
+    sp: usize, // stack pointer (next free slot)
+}
+
+impl Default for FluxVm {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl FluxVm {
     /// Create a new VM with an empty stack.
     #[inline(always)]
+    #[allow(clippy::new_without_default)] // Default is implemented below, in terms of new().
     pub const fn new() -> Self {
         Self {
             stack: [0.0; STACK_SIZE],
@@ -107,13 +114,17 @@ impl FluxVm {
                 }
                 FluxOpcode::Div => {
                     let b = self.pop()?;
-                    if b == 0.0 { return Err(FluxError::DivisionByZero); }
+                    if b == 0.0 {
+                        return Err(FluxError::DivisionByZero);
+                    }
                     let a = self.pop()?;
                     self.push(a / b)?;
                 }
                 FluxOpcode::Mod => {
                     let b = self.pop()?;
-                    if b == 0.0 { return Err(FluxError::DivisionByZero); }
+                    if b == 0.0 {
+                        return Err(FluxError::DivisionByZero);
+                    }
                     let a = self.pop()?;
                     self.push(a % b)?;
                 }
@@ -149,13 +160,16 @@ impl FluxVm {
                 FluxOpcode::Assert => {
                     let val = self.pop()?;
                     if val == 0.0 {
-                        constraints_ok = false;
+                        // No `constraints_ok = false` here: the error return below is
+                        // what reports this, and the assignment was never read.
                         return Err(FluxError::ConstraintViolation);
                     }
                 }
                 FluxOpcode::Check => {
                     let val = self.peek(0)?;
-                    if val == 0.0 { constraints_ok = false; }
+                    if val == 0.0 {
+                        constraints_ok = false;
+                    }
                     // Don't pop — CHECK is non-consuming
                 }
                 FluxOpcode::Validate => {
@@ -164,7 +178,9 @@ impl FluxVm {
                     let val = self.pop()?;
                     let ok = val >= lower && val <= upper;
                     self.push(if ok { 1.0 } else { 0.0 })?;
-                    if !ok { constraints_ok = false; }
+                    if !ok {
+                        constraints_ok = false;
+                    }
                 }
                 FluxOpcode::Reject => {
                     constraints_ok = false;
@@ -193,7 +209,9 @@ impl FluxVm {
                     // Quantize val to step size: round(val / step) * step
                     let step = self.pop()?;
                     let val = self.pop()?;
-                    if step == 0.0 { return Err(FluxError::DivisionByZero); }
+                    if step == 0.0 {
+                        return Err(FluxError::DivisionByZero);
+                    }
                     self.push(libm::round(val / step) * step)?;
                 }
 
@@ -204,12 +222,14 @@ impl FluxVm {
         }
 
         // Collect outputs
-        let count = if self.sp < MAX_OUTPUTS { self.sp } else { MAX_OUTPUTS };
+        let count = if self.sp < MAX_OUTPUTS {
+            self.sp
+        } else {
+            MAX_OUTPUTS
+        };
         let mut outputs = [0.0f64; MAX_OUTPUTS];
         let base = self.sp.saturating_sub(count);
-        for i in 0..count {
-            outputs[i] = self.stack[base + i];
-        }
+        outputs[..count].copy_from_slice(&self.stack[base..base + count]);
 
         Ok(FluxResult {
             outputs,

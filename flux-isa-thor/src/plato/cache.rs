@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use tracing::warn;
 use uuid::Uuid;
 
 use super::Tile;
@@ -26,7 +25,12 @@ impl TileCache {
     pub fn insert(&mut self, tile: Tile) {
         if self.tiles.len() >= self.max_entries {
             // Evict oldest — simplified; production would use LRU
-            if let Some(oldest_id) = self.tiles.iter().min_by_key(|(_, t)| t.created_at).map(|(id, _)| *id) {
+            if let Some(oldest_id) = self
+                .tiles
+                .iter()
+                .min_by_key(|(_, t)| t.created_at)
+                .map(|(id, _)| *id)
+            {
                 self.remove(&oldest_id);
             }
         }

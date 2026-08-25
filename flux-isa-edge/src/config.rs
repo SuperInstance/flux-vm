@@ -46,16 +46,36 @@ impl Config {
     /// Load config from environment variables (FLUX_ prefix).
     pub fn load_from_env() -> Self {
         let mut config = Config::default();
-        if let Ok(v) = std::env::var("FLUX_NODE_ID") { config.node_id = v; }
-        if let Ok(v) = std::env::var("FLUX_PLATO_URL") { config.plato_url = v; }
-        if let Ok(v) = std::env::var("FLUX_BIND_ADDR") { config.bind_addr = v; }
-        if let Ok(v) = std::env::var("FLUX_PORT") { config.port = v.parse().unwrap_or(9090); }
-        if let Ok(v) = std::env::var("FLUX_SYNC_INTERVAL") { config.sync_interval_secs = v.parse().unwrap_or(300); }
-        if let Ok(v) = std::env::var("FLUX_MAX_STEPS") { config.max_steps = v.parse().unwrap_or(1_000_000); }
-        if let Ok(v) = std::env::var("FLUX_MAX_TIME_SECS") { config.max_time_secs = v.parse().unwrap_or(30.0); }
-        if let Ok(v) = std::env::var("FLUX_MAX_STACK_DEPTH") { config.max_stack_depth = v.parse().unwrap_or(1024); }
-        if let Ok(v) = std::env::var("FLUX_BATCH_SIZE") { config.batch_size = v.parse().unwrap_or(64); }
-        if let Ok(v) = std::env::var("FLUX_VIOLATION_POLICY") { config.violation_policy = v; }
+        if let Ok(v) = std::env::var("FLUX_NODE_ID") {
+            config.node_id = v;
+        }
+        if let Ok(v) = std::env::var("FLUX_PLATO_URL") {
+            config.plato_url = v;
+        }
+        if let Ok(v) = std::env::var("FLUX_BIND_ADDR") {
+            config.bind_addr = v;
+        }
+        if let Ok(v) = std::env::var("FLUX_PORT") {
+            config.port = v.parse().unwrap_or(9090);
+        }
+        if let Ok(v) = std::env::var("FLUX_SYNC_INTERVAL") {
+            config.sync_interval_secs = v.parse().unwrap_or(300);
+        }
+        if let Ok(v) = std::env::var("FLUX_MAX_STEPS") {
+            config.max_steps = v.parse().unwrap_or(1_000_000);
+        }
+        if let Ok(v) = std::env::var("FLUX_MAX_TIME_SECS") {
+            config.max_time_secs = v.parse().unwrap_or(30.0);
+        }
+        if let Ok(v) = std::env::var("FLUX_MAX_STACK_DEPTH") {
+            config.max_stack_depth = v.parse().unwrap_or(1024);
+        }
+        if let Ok(v) = std::env::var("FLUX_BATCH_SIZE") {
+            config.batch_size = v.parse().unwrap_or(64);
+        }
+        if let Ok(v) = std::env::var("FLUX_VIOLATION_POLICY") {
+            config.violation_policy = v;
+        }
         config
     }
 

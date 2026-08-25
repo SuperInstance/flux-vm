@@ -29,6 +29,9 @@ pub struct SonarResult {
 pub struct GpuDispatcher {
     gpu_available: bool,
     gpu_memory_mb: u32,
+    // Concurrency is bounded by `semaphore` today; this is the configured
+    // value, kept for when real kernel dispatch lands. See the README.
+    #[allow(dead_code)]
     max_concurrent_kernels: usize,
     semaphore: Arc<Semaphore>,
 }
