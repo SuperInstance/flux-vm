@@ -29,7 +29,7 @@ opcode numbering, or a build system:
 | Implementation | Language | Where | Part of `cargo build --workspace`? |
 |---|---|---|---|
 | Core runtime | C | `src/flux_runtime_arm.c` / `flux_runtime_arm.h` | No — not a Cargo crate |
-| SAT8 saturation extension | C | `src/flux_sat8_ops.h` | No |
+| SAT8 saturation extension | C | `src/flux_sat8_ops.inc` | No |
 | Runtime monitor | C | `src/flux_monitor_arm.c` | No |
 | `flux-isa` | Rust | `flux-isa/` | Yes |
 | `flux-isa-mini` | Rust | `flux-isa-mini/` | Yes |
@@ -59,7 +59,7 @@ opcode entries directly (see the file for each):
 | Implementation | File | Opcode count | Notes |
 |---|---|---|---|
 | Core runtime | `src/flux_runtime_arm.h` | 20 | `#define FLUX_OP_*` |
-| SAT8 extension | `src/flux_sat8_ops.h` | 8 | Extends the core numbering (opcodes `0x30`–`0x37`, no collisions) — core + SAT8 = **28** opcodes in one coherent scheme |
+| SAT8 extension | `src/flux_sat8_ops.inc` | 8 | Extends the core numbering (opcodes `0x30`–`0x37`, no collisions) — core + SAT8 = **28** opcodes in one coherent scheme |
 | Runtime monitor | `src/flux_monitor_arm.c` | 21 | Its own numbering scheme, incompatible with the core runtime: e.g. opcode `0x01` is `PUSH_I8` in the core but `PUSH_I32` in the monitor |
 | `flux-isa` | `flux-isa/src/opcode.rs` | 37 | |
 | `flux-isa-mini` | `flux-isa-mini/src/opcode.rs` | 21 | Header comment says "21 essential operations stripped from the full 35" — matches its own count, not the "full 35" it refers to |
@@ -211,14 +211,14 @@ These appear in comments or in the design doc, but nothing in this repo
 implements them. Listed here so they're visible as intentions rather than
 silently dropped or, worse, silently implied to exist:
 
-- **DO-178C DAL A certification.** One comment in `src/flux_sat8_ops.h`
+- **DO-178C DAL A certification.** One comment in `src/flux_sat8_ops.inc`
   describes the code as "Safe for DO-178C DAL A certification path." There
   are no certification artifacts in this repo — no compliance matrix, no
   software development plan, no requirements traceability, nothing filed
   with a certification authority. If that work starts, it belongs in its
   own directory with its own paper trail.
 - **A Coq formalisation.** No `.v` files exist anywhere in this repository
-  (`find . -name "*.v"` returns nothing). Comments in `src/flux_sat8_ops.h`
+  (`find . -name "*.v"` returns nothing). Comments in `src/flux_sat8_ops.inc`
   reference a file, `flux_saturation_coq.v`, that is not present.
 - **A TrustZone bridge to a 247-opcode "FLUX-X" ISA**, in the sense the old
   README implied — a real secure-world bridge with a real 247-entry opcode
