@@ -58,7 +58,9 @@ fn execute_bytecode(bytecode: &[u8]) -> Result<Vec<u8>, String> {
                     return Err("PUSH: insufficient bytes".into());
                 }
                 let val = f64::from_be_bytes(
-                    bytecode[pc + 1..pc + 9].try_into().map_err(|_| "bad float")?,
+                    bytecode[pc + 1..pc + 9]
+                        .try_into()
+                        .map_err(|_| "bad float")?,
                 );
                 stack.push(val);
                 pc += 8;

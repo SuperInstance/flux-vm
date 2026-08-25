@@ -8,7 +8,6 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::{mpsc, Semaphore};
 
-
 /// Pipeline stage names.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Stage {
@@ -97,10 +96,7 @@ impl Pipeline {
 
     /// Run the pipeline with the given input channel.
     /// Returns the committed-item counter for monitoring.
-    pub async fn run(
-        &self,
-        input: mpsc::Receiver<PipelineItem>,
-    ) {
+    pub async fn run(&self, input: mpsc::Receiver<PipelineItem>) {
         let cap = self.config.channel_capacity;
 
         // INGEST → VALIDATE

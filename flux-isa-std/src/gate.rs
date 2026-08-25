@@ -144,8 +144,8 @@ impl QualityGate {
         let mut start = 0;
         while let Some(pos) = haystack_lower[start..].find(&needle_lower) {
             let abs_pos = start + pos;
-            let before_ok = abs_pos == 0
-                || !haystack_lower.as_bytes()[abs_pos - 1].is_ascii_alphabetic();
+            let before_ok =
+                abs_pos == 0 || !haystack_lower.as_bytes()[abs_pos - 1].is_ascii_alphabetic();
             let after_pos = abs_pos + needle_lower.len();
             let after_ok = after_pos >= haystack_lower.len()
                 || !haystack_lower.as_bytes()[after_pos].is_ascii_alphabetic();

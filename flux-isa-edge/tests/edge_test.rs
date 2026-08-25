@@ -1,13 +1,15 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
 use flux_isa_edge::bytecode::Bytecode;
 use flux_isa_edge::instruction::Instruction;
 use flux_isa_edge::opcode::OpCode;
-use flux_isa_edge::vm::{ExecutionLimits, Vm};
-use flux_isa_edge::sensor::pipeline::{Pipeline, PipelineConfig, PipelineResult};
-use flux_isa_edge::sensor::SensorSource;
-use flux_isa_edge::sensor::sonar::{SonarConfig, SonarSensor, mackenzie_sound_speed, francois_garrison_absorption};
 use flux_isa_edge::plato::sync::PlatoCache;
+use flux_isa_edge::sensor::pipeline::{Pipeline, PipelineConfig, PipelineResult};
+use flux_isa_edge::sensor::sonar::{
+    francois_garrison_absorption, mackenzie_sound_speed, SonarConfig, SonarSensor,
+};
+use flux_isa_edge::sensor::SensorSource;
+use flux_isa_edge::vm::{ExecutionLimits, Vm};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 // use flux_isa_edge::server; // available for server integration tests
 use flux_isa_edge::config::Config;
 use tokio::sync::mpsc;
@@ -99,9 +101,9 @@ async fn test_vm_basic_arithmetic() {
 #[tokio::test]
 async fn test_vm_validation_pass() {
     let bc = Bytecode::new(vec![
-        Instruction::with_operand(OpCode::Push, 50.0),   // value
-        Instruction::with_operand(OpCode::Push, 0.0),    // min
-        Instruction::with_operand(OpCode::Push, 100.0),  // max
+        Instruction::with_operand(OpCode::Push, 50.0),  // value
+        Instruction::with_operand(OpCode::Push, 0.0),   // min
+        Instruction::with_operand(OpCode::Push, 100.0), // max
         Instruction::new(OpCode::Validate),
         Instruction::new(OpCode::Halt),
     ]);
@@ -116,9 +118,9 @@ async fn test_vm_validation_pass() {
 #[tokio::test]
 async fn test_vm_validation_fail() {
     let bc = Bytecode::new(vec![
-        Instruction::with_operand(OpCode::Push, 150.0),  // value out of range
-        Instruction::with_operand(OpCode::Push, 0.0),    // min
-        Instruction::with_operand(OpCode::Push, 100.0),  // max
+        Instruction::with_operand(OpCode::Push, 150.0), // value out of range
+        Instruction::with_operand(OpCode::Push, 0.0),   // min
+        Instruction::with_operand(OpCode::Push, 100.0), // max
         Instruction::new(OpCode::Validate),
         Instruction::new(OpCode::Halt),
     ]);
@@ -187,9 +189,9 @@ async fn test_vm_clamp() {
 #[tokio::test]
 async fn test_vm_tolerance() {
     let bc = Bytecode::new(vec![
-        Instruction::with_operand(OpCode::Push, 100.1),  // value
-        Instruction::with_operand(OpCode::Push, 100.0),  // expected
-        Instruction::with_operand(OpCode::Push, 0.2),    // tolerance
+        Instruction::with_operand(OpCode::Push, 100.1), // value
+        Instruction::with_operand(OpCode::Push, 100.0), // expected
+        Instruction::with_operand(OpCode::Push, 0.2),   // tolerance
         Instruction::new(OpCode::Tolerance),
         Instruction::new(OpCode::Halt),
     ]);
@@ -204,7 +206,7 @@ async fn test_vm_memory_load_store() {
     let bc = Bytecode::new(vec![
         Instruction::with_operand(OpCode::Push, 42.0),
         Instruction::with_operand(OpCode::Push, 0.0),
-        Instruction::new(OpCode::Store),       // memory[0] = 42
+        Instruction::new(OpCode::Store), // memory[0] = 42
         Instruction::with_operand(OpCode::Load, 0.0), // push memory[0]
         Instruction::new(OpCode::Halt),
     ]);
@@ -235,7 +237,11 @@ async fn test_vm_call_ret() {
 fn test_mackenzie_sound_speed() {
     // Freshwater at surface, 10°C should be ~1447 m/s.
     let c = mackenzie_sound_speed(10.0, 0.0, 0.0);
-    assert!(c > 1400.0 && c < 1500.0, "sound speed {} out of expected range", c);
+    assert!(
+        c > 1400.0 && c < 1500.0,
+        "sound speed {} out of expected range",
+        c
+    );
 }
 
 #[test]
@@ -269,15 +275,13 @@ async fn test_sonar_sensor_reads() {
 async fn test_plato_cache_sync_and_query() {
     use flux_isa_edge::plato::client::Tile;
     let cache = PlatoCache::new();
-    let tiles = vec![
-        Tile {
-            id: Uuid::new_v4(),
-            room: "test".into(),
-            content: "hello".into(),
-            timestamp: 1,
-            tags: vec![],
-        },
-    ];
+    let tiles = vec![Tile {
+        id: Uuid::new_v4(),
+        room: "test".into(),
+        content: "hello".into(),
+        timestamp: 1,
+        tags: vec![],
+    }];
     cache.sync_room("test", tiles).await;
     let result = cache.query_room("test").await;
     assert_eq!(result.len(), 1);
@@ -320,7 +324,10 @@ struct MockSensor {
 
 impl MockSensor {
     fn new(name: &str) -> Self {
-        MockSensor { name: name.into(), counter: Arc::new(AtomicUsize::new(0)) }
+        MockSensor {
+            name: name.into(),
+            counter: Arc::new(AtomicUsize::new(0)),
+        }
     }
 }
 
@@ -329,7 +336,9 @@ impl SensorSource for MockSensor {
         let v = self.counter.fetch_add(1, Ordering::Relaxed) as f64;
         vec![v]
     }
-    fn sensor_name(&self) -> &str { &self.name }
+    fn sensor_name(&self) -> &str {
+        &self.name
+    }
 }
 
 #[tokio::test]

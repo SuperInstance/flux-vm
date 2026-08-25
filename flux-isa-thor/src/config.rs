@@ -53,7 +53,10 @@ pub struct ThorConfig {
 impl Default for ThorConfig {
     fn default() -> Self {
         Self {
-            node_id: format!("thor-{}", hostname::get().unwrap_or_default().to_string_lossy()),
+            node_id: format!(
+                "thor-{}",
+                hostname::get().unwrap_or_default().to_string_lossy()
+            ),
             listen_addr: "0.0.0.0:8080".parse().unwrap(),
             plato_url: "http://localhost:3000".to_string(),
             gpu_available: false,

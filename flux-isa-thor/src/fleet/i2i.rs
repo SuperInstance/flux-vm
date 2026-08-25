@@ -58,7 +58,12 @@ impl I2iMessage {
 
     /// Format for logging: [I2I:TYPE] from — bytes
     pub fn to_header(&self) -> String {
-        format!("[I2I:{}] {} — {} bytes", self.msg_type, self.from, self.payload.len())
+        format!(
+            "[I2I:{}] {} — {} bytes",
+            self.msg_type,
+            self.from,
+            self.payload.len()
+        )
     }
 }
 

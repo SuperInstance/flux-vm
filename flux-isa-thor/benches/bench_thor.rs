@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use flux_isa_thor::vm::ThorVm;
 use std::sync::Arc;
 
@@ -40,11 +40,15 @@ fn bench_vm_parallel_branches(c: &mut Criterion) {
 fn create_test_vm() -> Arc<ThorVm> {
     use flux_isa_thor::cuda::GpuDispatcher;
     use flux_isa_thor::fleet::{FleetHandle, FleetNode, NodeRole, NodeStatus};
-    use flux_isa_thor::plato::{PlatoHandle, cache::TileCache, client::PlatoClient};
+    use flux_isa_thor::plato::{cache::TileCache, client::PlatoClient, PlatoHandle};
     use flux_isa_thor::vm::VmConfig;
 
     let gpu = Arc::new(GpuDispatcher::new(false, 0, 4));
-    let plato_client = Arc::new(PlatoClient::new("http://localhost:1", 4, std::time::Duration::from_secs(1)));
+    let plato_client = Arc::new(PlatoClient::new(
+        "http://localhost:1",
+        4,
+        std::time::Duration::from_secs(1),
+    ));
     let cache = Arc::new(tokio::sync::RwLock::new(TileCache::new(1000)));
     let plato = Arc::new(PlatoHandle::new(plato_client, cache));
     let fleet = Arc::new(FleetHandle::new(FleetNode {

@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
-use tracing::warn;
 
 use crate::config::ThorConfig;
 use crate::cuda::solver::{BatchCspSolver, CspInstance};
@@ -193,7 +192,9 @@ async fn status(State(s): State<AppState>) -> Json<StatusResponse> {
         gpu_memory_mb: s.gpu.gpu_memory_mb(),
         total_instructions: s.vm.total_instructions(),
         uptime_secs: s.start_time.elapsed().as_secs(),
-        pipeline_committed: s.pipeline_committed.load(std::sync::atomic::Ordering::Relaxed),
+        pipeline_committed: s
+            .pipeline_committed
+            .load(std::sync::atomic::Ordering::Relaxed),
     })
 }
 
@@ -201,7 +202,9 @@ async fn metrics(State(s): State<AppState>) -> String {
     // Prometheus text format
     let instructions = s.vm.total_instructions();
     let uptime = s.start_time.elapsed().as_secs();
-    let committed = s.pipeline_committed.load(std::sync::atomic::Ordering::Relaxed);
+    let committed = s
+        .pipeline_committed
+        .load(std::sync::atomic::Ordering::Relaxed);
     format!(
         "# HELP flux_thor_instructions_total Total instructions executed\n\
          # TYPE flux_thor_instructions_total counter\n\
@@ -225,7 +228,7 @@ async fn handle_socket(mut socket: axum::extract::ws::WebSocket) {
         match msg {
             Ok(Message::Text(t)) => {
                 let reply = format!("echo: {t}");
-                if socket.send(Message::Text(reply.into())).await.is_err() {
+                if socket.send(Message::Text(reply)).await.is_err() {
                     break;
                 }
             }

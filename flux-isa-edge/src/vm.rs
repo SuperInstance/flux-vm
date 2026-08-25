@@ -1,8 +1,8 @@
-use std::time::{Duration, Instant};
-use serde::{Deserialize, Serialize};
 use crate::bytecode::{Bytecode, ExecutionResult};
 use crate::instruction::Instruction;
 use crate::opcode::OpCode;
+use serde::{Deserialize, Serialize};
+use std::time::{Duration, Instant};
 
 /// Execution limits to prevent runaway programs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -91,7 +91,11 @@ impl Vm {
             stack_depth: self.stack.len(),
             memory_slots_used: self.memory.iter().filter(|v| **v != 0.0).count(),
             elapsed_ms,
-            instructions_per_sec: if elapsed > 0.0 { self.steps as f64 / elapsed } else { 0.0 },
+            instructions_per_sec: if elapsed > 0.0 {
+                self.steps as f64 / elapsed
+            } else {
+                0.0
+            },
         }
     }
 
@@ -125,7 +129,7 @@ impl Vm {
             }
 
             // Cooperative yield every N steps.
-            if self.steps > 0 && self.steps % self.yield_every == 0 {
+            if self.steps > 0 && self.steps.is_multiple_of(self.yield_every) {
                 tokio::task::yield_now().await;
             }
 
@@ -158,7 +162,11 @@ impl Vm {
             violations: self.violations,
             elapsed_ms,
             instructions_per_sec: ips,
-            error: if success { None } else { Some(format!("{:?}", halt_reason)) },
+            error: if success {
+                None
+            } else {
+                Some(format!("{:?}", halt_reason))
+            },
         }
     }
 
@@ -203,7 +211,10 @@ impl Vm {
             OpCode::Load => {
                 let idx = instr.operand.unwrap_or(0.0) as usize;
                 if idx >= self.memory.len() {
-                    return Err(HaltReason::InvalidInstruction(format!("LOAD: index {} out of range", idx)));
+                    return Err(HaltReason::InvalidInstruction(format!(
+                        "LOAD: index {} out of range",
+                        idx
+                    )));
                 }
                 self.stack.push(self.memory[idx]);
             }
@@ -234,16 +245,16 @@ impl Vm {
             }
 
             // ── Comparison ──────────────────────
-            OpCode::Eq  => self.binary_op(|a, b| if a == b { 1.0 } else { 0.0 })?,
-            OpCode::Ne  => self.binary_op(|a, b| if a != b { 1.0 } else { 0.0 })?,
-            OpCode::Lt  => self.binary_op(|a, b| if a < b  { 1.0 } else { 0.0 })?,
-            OpCode::Le  => self.binary_op(|a, b| if a <= b { 1.0 } else { 0.0 })?,
-            OpCode::Gt  => self.binary_op(|a, b| if a > b  { 1.0 } else { 0.0 })?,
-            OpCode::Ge  => self.binary_op(|a, b| if a >= b { 1.0 } else { 0.0 })?,
+            OpCode::Eq => self.binary_op(|a, b| if a == b { 1.0 } else { 0.0 })?,
+            OpCode::Ne => self.binary_op(|a, b| if a != b { 1.0 } else { 0.0 })?,
+            OpCode::Lt => self.binary_op(|a, b| if a < b { 1.0 } else { 0.0 })?,
+            OpCode::Le => self.binary_op(|a, b| if a <= b { 1.0 } else { 0.0 })?,
+            OpCode::Gt => self.binary_op(|a, b| if a > b { 1.0 } else { 0.0 })?,
+            OpCode::Ge => self.binary_op(|a, b| if a >= b { 1.0 } else { 0.0 })?,
 
             // ── Logic ───────────────────────────
             OpCode::And => self.binary_op(|a, b| if a != 0.0 && b != 0.0 { 1.0 } else { 0.0 })?,
-            OpCode::Or  => self.binary_op(|a, b| if a != 0.0 || b != 0.0 { 1.0 } else { 0.0 })?,
+            OpCode::Or => self.binary_op(|a, b| if a != 0.0 || b != 0.0 { 1.0 } else { 0.0 })?,
             OpCode::Not => {
                 let v = self.stack.pop().ok_or(HaltReason::StackUnderflow)?;
                 self.stack.push(if v == 0.0 { 1.0 } else { 0.0 });
@@ -253,11 +264,13 @@ impl Vm {
             OpCode::Validate => {
                 self.constraint_checks += 1;
                 // Stack: [value, min, max] → push 1 if valid, 0 if not
-                let max  = self.stack.pop().ok_or(HaltReason::StackUnderflow)?;
-                let min  = self.stack.pop().ok_or(HaltReason::StackUnderflow)?;
-                let val  = self.stack.pop().ok_or(HaltReason::StackUnderflow)?;
+                let max = self.stack.pop().ok_or(HaltReason::StackUnderflow)?;
+                let min = self.stack.pop().ok_or(HaltReason::StackUnderflow)?;
+                let val = self.stack.pop().ok_or(HaltReason::StackUnderflow)?;
                 let valid = val >= min && val <= max;
-                if !valid { self.violations += 1; }
+                if !valid {
+                    self.violations += 1;
+                }
                 self.stack.push(if valid { 1.0 } else { 0.0 });
             }
             OpCode::Assert => {
@@ -271,11 +284,13 @@ impl Vm {
             OpCode::Tolerance => {
                 self.constraint_checks += 1;
                 // Stack: [value, expected, tolerance] → push 1 if within tol
-                let tol   = self.stack.pop().ok_or(HaltReason::StackUnderflow)?;
-                let exp   = self.stack.pop().ok_or(HaltReason::StackUnderflow)?;
-                let val   = self.stack.pop().ok_or(HaltReason::StackUnderflow)?;
+                let tol = self.stack.pop().ok_or(HaltReason::StackUnderflow)?;
+                let exp = self.stack.pop().ok_or(HaltReason::StackUnderflow)?;
+                let val = self.stack.pop().ok_or(HaltReason::StackUnderflow)?;
                 let ok = (val - exp).abs() <= tol;
-                if !ok { self.violations += 1; }
+                if !ok {
+                    self.violations += 1;
+                }
                 self.stack.push(if ok { 1.0 } else { 0.0 });
             }
             OpCode::Clamp => {
@@ -307,7 +322,10 @@ impl Vm {
             OpCode::Call => {
                 let target = instr.operand.unwrap_or(0.0) as usize;
                 if target >= len {
-                    return Err(HaltReason::InvalidInstruction(format!("CALL: target {} out of range", target)));
+                    return Err(HaltReason::InvalidInstruction(format!(
+                        "CALL: target {} out of range",
+                        target
+                    )));
                 }
                 self.call_stack.push(*pc + 1);
                 *pc = target;
@@ -315,14 +333,17 @@ impl Vm {
             }
             OpCode::Ret => {
                 match self.call_stack.pop() {
-                    Some(ret_pc) => { *pc = ret_pc; return Ok(true); }
+                    Some(ret_pc) => {
+                        *pc = ret_pc;
+                        return Ok(true);
+                    }
                     None => return Ok(false), // top-level return = halt
                 }
             }
             OpCode::Halt => return Ok(false),
 
             // ── I/O (no-op in edge VM — handled at pipeline level) ──
-            OpCode::Input  => {
+            OpCode::Input => {
                 // Push a placeholder zero; real input comes from sensor pipeline.
                 self.stack.push(instr.operand.unwrap_or(0.0));
             }
@@ -358,6 +379,8 @@ impl Vm {
 
     /// Drain the stack.
     pub fn drain_stack(&mut self) -> Vec<f64> {
-        self.stack.drain(..).collect()
+        // `mem::take` hands over the existing allocation; `drain(..).collect()`
+        // walked it and built a second one for the same contents.
+        std::mem::take(&mut self.stack)
     }
 }

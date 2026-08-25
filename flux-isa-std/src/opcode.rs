@@ -18,57 +18,57 @@ pub enum OpCodeGroup {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FluxOpCode {
     // Stack (7)
-    Push,       // 0x01
-    Pop,        // 0x02
-    Dup,        // 0x03
-    Swap,       // 0x04
-    Over,       // 0x05
-    Rot,        // 0x06
-    Depth,      // 0x07
+    Push,  // 0x01
+    Pop,   // 0x02
+    Dup,   // 0x03
+    Swap,  // 0x04
+    Over,  // 0x05
+    Rot,   // 0x06
+    Depth, // 0x07
 
     // Arithmetic (7)
-    Add,        // 0x10
-    Sub,        // 0x11
-    Mul,        // 0x12
-    Div,        // 0x13
-    Mod,        // 0x14
-    Negate,     // 0x15
-    Abs,        // 0x16
+    Add,    // 0x10
+    Sub,    // 0x11
+    Mul,    // 0x12
+    Div,    // 0x13
+    Mod,    // 0x14
+    Negate, // 0x15
+    Abs,    // 0x16
 
     // Logic (5)
-    And,        // 0x20
-    Or,         // 0x21
-    Not,        // 0x22
-    Xor,        // 0x23
-    Shl,        // 0x24
+    And, // 0x20
+    Or,  // 0x21
+    Not, // 0x22
+    Xor, // 0x23
+    Shl, // 0x24
 
     // Comparison (6)
-    Eq,         // 0x30
-    Ne,         // 0x31
-    Lt,         // 0x32
-    Gt,         // 0x33
-    Le,         // 0x34
-    Ge,         // 0x35
+    Eq, // 0x30
+    Ne, // 0x31
+    Lt, // 0x32
+    Gt, // 0x33
+    Le, // 0x34
+    Ge, // 0x35
 
     // Control (5)
-    Jmp,        // 0x40
-    Call,       // 0x41
-    Ret,        // 0x42
-    Halt,       // 0x43
-    Nop,        // 0x44
+    Jmp,  // 0x40
+    Call, // 0x41
+    Ret,  // 0x42
+    Halt, // 0x43
+    Nop,  // 0x44
 
     // Memory (3)
-    Load,       // 0x50
-    Store,      // 0x51
-    LoadConst,  // 0x52
+    Load,      // 0x50
+    Store,     // 0x51
+    LoadConst, // 0x52
 
     // Constraint (2)
-    Assert,     // 0x60
-    Check,      // 0x61
+    Assert, // 0x60
+    Check,  // 0x61
 
     // IO (2)
-    Print,      // 0x70
-    Emit,       // 0x71
+    Print, // 0x70
+    Emit,  // 0x71
 }
 
 impl FluxOpCode {
@@ -159,10 +159,24 @@ impl FluxOpCode {
 
     pub fn group(self) -> OpCodeGroup {
         match self {
-            Self::Push | Self::Pop | Self::Dup | Self::Swap | Self::Over | Self::Rot | Self::Depth => OpCodeGroup::Stack,
-            Self::Add | Self::Sub | Self::Mul | Self::Div | Self::Mod | Self::Negate | Self::Abs => OpCodeGroup::Arithmetic,
+            Self::Push
+            | Self::Pop
+            | Self::Dup
+            | Self::Swap
+            | Self::Over
+            | Self::Rot
+            | Self::Depth => OpCodeGroup::Stack,
+            Self::Add
+            | Self::Sub
+            | Self::Mul
+            | Self::Div
+            | Self::Mod
+            | Self::Negate
+            | Self::Abs => OpCodeGroup::Arithmetic,
             Self::And | Self::Or | Self::Not | Self::Xor | Self::Shl => OpCodeGroup::Logic,
-            Self::Eq | Self::Ne | Self::Lt | Self::Gt | Self::Le | Self::Ge => OpCodeGroup::Comparison,
+            Self::Eq | Self::Ne | Self::Lt | Self::Gt | Self::Le | Self::Ge => {
+                OpCodeGroup::Comparison
+            }
             Self::Jmp | Self::Call | Self::Ret | Self::Halt | Self::Nop => OpCodeGroup::Control,
             Self::Load | Self::Store | Self::LoadConst => OpCodeGroup::Memory,
             Self::Assert | Self::Check => OpCodeGroup::Constraint,

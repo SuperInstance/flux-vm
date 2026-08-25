@@ -112,13 +112,34 @@ impl FluxOpcode {
     /// Returns the opcode group as a human-readable string.
     pub fn group(&self) -> &'static str {
         match self {
-            FluxOpcode::Add | FluxOpcode::Sub | FluxOpcode::Mul | FluxOpcode::Div | FluxOpcode::Mod => "ARITHMETIC",
-            FluxOpcode::Assert | FluxOpcode::Check | FluxOpcode::Validate | FluxOpcode::Reject => "CONSTRAINT",
-            FluxOpcode::Jump | FluxOpcode::Branch | FluxOpcode::Call | FluxOpcode::Return | FluxOpcode::Halt => "FLOW",
-            FluxOpcode::Load | FluxOpcode::Store | FluxOpcode::Push | FluxOpcode::Pop | FluxOpcode::Swap => "MEMORY",
-            FluxOpcode::Snap | FluxOpcode::Quantize | FluxOpcode::Cast | FluxOpcode::Promote => "CONVERT",
+            FluxOpcode::Add
+            | FluxOpcode::Sub
+            | FluxOpcode::Mul
+            | FluxOpcode::Div
+            | FluxOpcode::Mod => "ARITHMETIC",
+            FluxOpcode::Assert | FluxOpcode::Check | FluxOpcode::Validate | FluxOpcode::Reject => {
+                "CONSTRAINT"
+            }
+            FluxOpcode::Jump
+            | FluxOpcode::Branch
+            | FluxOpcode::Call
+            | FluxOpcode::Return
+            | FluxOpcode::Halt => "FLOW",
+            FluxOpcode::Load
+            | FluxOpcode::Store
+            | FluxOpcode::Push
+            | FluxOpcode::Pop
+            | FluxOpcode::Swap => "MEMORY",
+            FluxOpcode::Snap | FluxOpcode::Quantize | FluxOpcode::Cast | FluxOpcode::Promote => {
+                "CONVERT"
+            }
             FluxOpcode::And | FluxOpcode::Or | FluxOpcode::Not | FluxOpcode::Xor => "LOGIC",
-            FluxOpcode::Eq | FluxOpcode::Neq | FluxOpcode::Lt | FluxOpcode::Gt | FluxOpcode::Lte | FluxOpcode::Gte => "COMPARE",
+            FluxOpcode::Eq
+            | FluxOpcode::Neq
+            | FluxOpcode::Lt
+            | FluxOpcode::Gt
+            | FluxOpcode::Lte
+            | FluxOpcode::Gte => "COMPARE",
             FluxOpcode::Nop | FluxOpcode::Debug | FluxOpcode::Trace | FluxOpcode::Dump => "SPECIAL",
         }
     }
@@ -126,9 +147,18 @@ impl FluxOpcode {
     /// Returns the number of stack operands this opcode consumes, if known statically.
     pub fn stack_inputs(&self) -> usize {
         match self {
-            FluxOpcode::Add | FluxOpcode::Sub | FluxOpcode::Mul | FluxOpcode::Div | FluxOpcode::Mod => 2,
+            FluxOpcode::Add
+            | FluxOpcode::Sub
+            | FluxOpcode::Mul
+            | FluxOpcode::Div
+            | FluxOpcode::Mod => 2,
             FluxOpcode::And | FluxOpcode::Or | FluxOpcode::Xor => 2,
-            FluxOpcode::Eq | FluxOpcode::Neq | FluxOpcode::Lt | FluxOpcode::Gt | FluxOpcode::Lte | FluxOpcode::Gte => 2,
+            FluxOpcode::Eq
+            | FluxOpcode::Neq
+            | FluxOpcode::Lt
+            | FluxOpcode::Gt
+            | FluxOpcode::Lte
+            | FluxOpcode::Gte => 2,
             FluxOpcode::Not => 1,
             FluxOpcode::Push => 0,
             FluxOpcode::Pop => 1,
@@ -141,9 +171,18 @@ impl FluxOpcode {
     /// Returns the number of values this opcode pushes onto the stack.
     pub fn stack_outputs(&self) -> usize {
         match self {
-            FluxOpcode::Add | FluxOpcode::Sub | FluxOpcode::Mul | FluxOpcode::Div | FluxOpcode::Mod => 1,
+            FluxOpcode::Add
+            | FluxOpcode::Sub
+            | FluxOpcode::Mul
+            | FluxOpcode::Div
+            | FluxOpcode::Mod => 1,
             FluxOpcode::And | FluxOpcode::Or | FluxOpcode::Not | FluxOpcode::Xor => 1,
-            FluxOpcode::Eq | FluxOpcode::Neq | FluxOpcode::Lt | FluxOpcode::Gt | FluxOpcode::Lte | FluxOpcode::Gte => 1,
+            FluxOpcode::Eq
+            | FluxOpcode::Neq
+            | FluxOpcode::Lt
+            | FluxOpcode::Gt
+            | FluxOpcode::Lte
+            | FluxOpcode::Gte => 1,
             FluxOpcode::Push => 1,
             FluxOpcode::Pop => 0,
             FluxOpcode::Swap => 2,

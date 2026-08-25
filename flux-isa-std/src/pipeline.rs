@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::bytecode::{FluxBytecode, BytecodeError};
+use crate::bytecode::{BytecodeError, FluxBytecode};
 use crate::gate::{GateConfig, QualityGate};
 use crate::vm::{FluxVM, VMConfig, VMError};
 
@@ -36,8 +36,10 @@ pub struct PipelineConfig {
 
 impl Default for PipelineConfig {
     fn default() -> Self {
-        let mut vm = VMConfig::default();
-        vm.trace_enabled = false;
+        let vm = VMConfig {
+            trace_enabled: false,
+            ..VMConfig::default()
+        };
         Self {
             vm,
             gate: GateConfig::default(),
@@ -143,13 +145,17 @@ impl Pipeline {
                 "stack": result.stack,
                 "output": result.output,
                 "error": result.error,
-            })).unwrap_or_else(|_| "JSON error".into()),
+            }))
+            .unwrap_or_else(|_| "JSON error".into()),
             OutputFormat::Plain => {
                 let mut s = String::new();
                 if result.success {
                     s.push_str("OK\n");
                 } else {
-                    s.push_str(&format!("ERROR: {}\n", result.error.as_deref().unwrap_or("unknown")));
+                    s.push_str(&format!(
+                        "ERROR: {}\n",
+                        result.error.as_deref().unwrap_or("unknown")
+                    ));
                 }
                 if !result.stack.is_empty() {
                     s.push_str(&format!("Stack: {:?}\n", result.stack));

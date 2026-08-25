@@ -1,5 +1,5 @@
-use std::time::Duration;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 use uuid::Uuid;
 
 /// A PLATO tile (unit of knowledge).
@@ -87,7 +87,8 @@ impl PlatoClient {
     /// Submit a tile through PLATO gate.
     pub async fn submit(&self, tile: Tile) -> Result<Tile, PlatoError> {
         self.retry(|| async {
-            let resp = self.http
+            let resp = self
+                .http
                 .post(format!("{}/api/tiles", self.config.url))
                 .json(&tile)
                 .send()
@@ -97,15 +98,20 @@ impl PlatoClient {
                 resp.json::<Tile>().await.map_err(PlatoError::from)
             } else {
                 let body = resp.text().await.unwrap_or_default();
-                Err(PlatoError::Server(format!("submit failed ({}): {}", status, body)))
+                Err(PlatoError::Server(format!(
+                    "submit failed ({}): {}",
+                    status, body
+                )))
             }
-        }).await
+        })
+        .await
     }
 
     /// Query tiles in a room.
     pub async fn query(&self, room: &str, query: &str) -> Result<Vec<Tile>, PlatoError> {
         self.retry(|| async {
-            let resp = self.http
+            let resp = self
+                .http
                 .get(format!("{}/api/rooms/{}/query", self.config.url, room))
                 .query(&[("q", query)])
                 .send()
@@ -116,15 +122,20 @@ impl PlatoClient {
                 Ok(qr.tiles)
             } else {
                 let body = resp.text().await.unwrap_or_default();
-                Err(PlatoError::Server(format!("query failed ({}): {}", status, body)))
+                Err(PlatoError::Server(format!(
+                    "query failed ({}): {}",
+                    status, body
+                )))
             }
-        }).await
+        })
+        .await
     }
 
     /// List all rooms.
     pub async fn list_rooms(&self) -> Result<Vec<String>, PlatoError> {
         self.retry(|| async {
-            let resp = self.http
+            let resp = self
+                .http
                 .get(format!("{}/api/rooms", self.config.url))
                 .send()
                 .await?;
@@ -133,18 +144,25 @@ impl PlatoClient {
                 resp.json::<Vec<String>>().await.map_err(PlatoError::from)
             } else {
                 let body = resp.text().await.unwrap_or_default();
-                Err(PlatoError::Server(format!("list_rooms failed ({}): {}", status, body)))
+                Err(PlatoError::Server(format!(
+                    "list_rooms failed ({}): {}",
+                    status, body
+                )))
             }
-        }).await
+        })
+        .await
     }
 
     /// Health check.
     pub async fn health(&self) -> Result<HealthResponse, PlatoError> {
-        let resp = self.http
+        let resp = self
+            .http
             .get(format!("{}/health", self.config.url))
             .send()
             .await?;
-        resp.json::<HealthResponse>().await.map_err(PlatoError::from)
+        resp.json::<HealthResponse>()
+            .await
+            .map_err(PlatoError::from)
     }
 
     async fn retry<F, Fut, T>(&self, f: F) -> Result<T, PlatoError>

@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use flux_isa_edge::config::Config;
 use flux_isa_edge::plato::client::{PlatoClient, PlatoConfig};
-use flux_isa_edge::plato::sync::{PlatoCache, SyncConfig, start_background_sync};
+use flux_isa_edge::plato::sync::{start_background_sync, PlatoCache, SyncConfig};
 use flux_isa_edge::sensor::pipeline::{Pipeline, PipelineConfig, ViolationPolicy};
 use flux_isa_edge::sensor::sonar::SonarSensor;
 use flux_isa_edge::server::{self, AppState};
@@ -16,7 +16,9 @@ use tracing_subscriber::EnvFilter;
 async fn main() {
     // ── Logging ────────────────────────────────────
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env().add_directive("flux_isa_edge=info".parse().unwrap()))
+        .with_env_filter(
+            EnvFilter::from_default_env().add_directive("flux_isa_edge=info".parse().unwrap()),
+        )
         .init();
 
     // ── Config ─────────────────────────────────────
@@ -57,7 +59,8 @@ async fn main() {
     let _sync_handle = start_background_sync(plato_client, cache.clone(), sync_config);
 
     // ── Sensor pipelines ───────────────────────────
-    let (result_tx, mut result_rx) = mpsc::channel::<flux_isa_edge::sensor::pipeline::PipelineResult>(256);
+    let (result_tx, mut result_rx) =
+        mpsc::channel::<flux_isa_edge::sensor::pipeline::PipelineResult>(256);
     let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
 
     // Sonar pipeline.
@@ -112,7 +115,9 @@ async fn main() {
 
     let app = server::build_router(state);
     let addr = format!("{}:{}", config.bind_addr, config.port);
-    let listener = tokio::net::TcpListener::bind(&addr).await.expect("failed to bind");
+    let listener = tokio::net::TcpListener::bind(&addr)
+        .await
+        .expect("failed to bind");
     tracing::info!(%addr, "HTTP server listening");
 
     // ── Graceful shutdown ──────────────────────────

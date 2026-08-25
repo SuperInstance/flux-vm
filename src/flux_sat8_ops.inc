@@ -1,5 +1,17 @@
 /**
- * @file flux_sat8_ops.h
+ * @file flux_sat8_ops.inc
+ *
+ * STATUS: an unintegrated fragment, not a compilable header. It is `.inc`
+ * rather than `.h` because it cannot stand on its own: it calls `flux_pop`
+ * and `flux_push`, which are defined nowhere in this repository, and no
+ * translation unit includes it. It is kept because the saturation logic is
+ * real work, not because it builds.
+ *
+ * The claims below are inherited from an earlier draft and are not supported
+ * here. There is no 50-opcode base ISA in this repository (see the README for
+ * the counted per-implementation figures), and nothing in `docs/` or anywhere
+ * else supports the DO-178C DAL A or Coq statements -- there are no `.v` files
+ * in this tree at all.
  * @brief FLUX INT8 Saturation Extension Opcodes
  *
  * Adds INT8 saturated arithmetic to the FLUX constraint VM.

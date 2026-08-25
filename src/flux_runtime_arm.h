@@ -12,6 +12,12 @@
 #ifndef FLUX_RUNTIME_ARM_H
 #define FLUX_RUNTIME_ARM_H
 
+/* This header declares fixed-width types in its own structs, so it includes
+ * what it uses. Without this the header only compiled when a translation
+ * unit happened to include <stdint.h> before it -- and flux_runtime_arm.c
+ * includes it after, so the file did not build at all. */
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

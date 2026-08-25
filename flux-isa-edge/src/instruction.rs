@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::opcode::OpCode;
+use serde::{Deserialize, Serialize};
 
 /// A single FLUX instruction.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -11,11 +11,17 @@ pub struct Instruction {
 
 impl Instruction {
     pub fn new(opcode: OpCode) -> Self {
-        Instruction { opcode, operand: None }
+        Instruction {
+            opcode,
+            operand: None,
+        }
     }
 
     pub fn with_operand(opcode: OpCode, operand: f64) -> Self {
-        Instruction { opcode, operand: Some(operand) }
+        Instruction {
+            opcode,
+            operand: Some(operand),
+        }
     }
 
     /// Encode to bytes: [opcode, operand_flag, optional 8-byte f64].

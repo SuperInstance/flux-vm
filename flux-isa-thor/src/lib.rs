@@ -2,7 +2,6 @@
 ///
 /// Jetson Thor / AGX Orin / data-center GPU with CUDA acceleration,
 /// batch CSP solving, fleet coordination, and full PLATO integration.
-
 pub mod config;
 pub mod cuda;
 pub mod fleet;

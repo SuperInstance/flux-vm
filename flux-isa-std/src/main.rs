@@ -51,7 +51,11 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Run { file, trace, max_stack } => {
+        Commands::Run {
+            file,
+            trace,
+            max_stack,
+        } => {
             let bytecode = match FluxBytecode::load_from_file(&file) {
                 Ok(bc) => bc,
                 Err(e) => {
@@ -65,9 +69,11 @@ fn main() {
                 process::exit(1);
             }
 
-            let mut config = VMConfig::default();
-            config.max_stack_size = max_stack;
-            config.trace_enabled = trace;
+            let config = VMConfig {
+                max_stack_size: max_stack,
+                trace_enabled: trace,
+                ..VMConfig::default()
+            };
 
             let mut vm = FluxVM::new(config);
             match vm.execute_bytecode(&bytecode) {
@@ -145,15 +151,13 @@ fn main() {
                     }
                     println!("Compiled to {}", path);
                 }
-                None => {
-                    match bytecode.to_json() {
-                        Ok(json) => println!("{}", json),
-                        Err(e) => {
-                            eprintln!("Error serializing: {}", e);
-                            process::exit(1);
-                        }
+                None => match bytecode.to_json() {
+                    Ok(json) => println!("{}", json),
+                    Err(e) => {
+                        eprintln!("Error serializing: {}", e);
+                        process::exit(1);
                     }
-                }
+                },
             }
         }
     }

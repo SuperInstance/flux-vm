@@ -1,4 +1,3 @@
-
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -92,9 +91,15 @@ pub struct ExecutionMetrics {
 
 #[derive(Debug, Clone)]
 struct BranchResult {
+    // Populated but not yet consumed: the parallel-branch reporting integration is not built.
+    // See "Not built yet" in the README.
+    #[allow(dead_code)]
     branch_id: usize,
+    #[allow(dead_code)]
     stack: Vec<Value>,
+    #[allow(dead_code)]
     metrics: ExecutionMetrics,
+    #[allow(dead_code)]
     trace: Vec<TraceEntry>,
 }
 
@@ -125,8 +130,13 @@ impl Default for VmConfig {
 
 pub struct ThorVm {
     config: VmConfig,
+    // Populated but not yet consumed: the GPU integration is not built.
+    // See "Not built yet" in the README.
+    #[allow(dead_code)]
     gpu: Arc<GpuDispatcher>,
+    #[allow(dead_code)]
     plato: Arc<PlatoHandle>,
+    #[allow(dead_code)]
     fleet: Arc<FleetHandle>,
     total_executed: AtomicU64,
 }
@@ -194,9 +204,8 @@ impl ThorVm {
                         status = VmStatus::Error;
                         break;
                     }
-                    let val = f64::from_be_bytes(
-                        bytecode[pc + 1..pc + 9].try_into().unwrap_or([0u8; 8]),
-                    );
+                    let val =
+                        f64::from_be_bytes(bytecode[pc + 1..pc + 9].try_into().unwrap_or([0u8; 8]));
                     stack.push(Value::F64(val));
                     pc += 8;
                 }
@@ -219,9 +228,9 @@ impl ThorVm {
                         status = VmStatus::Error;
                         break;
                     }
-                    let idx = u32::from_be_bytes(
-                        bytecode[pc + 1..pc + 5].try_into().unwrap_or([0u8; 4]),
-                    ) as usize;
+                    let idx =
+                        u32::from_be_bytes(bytecode[pc + 1..pc + 5].try_into().unwrap_or([0u8; 4]))
+                            as usize;
                     if idx < stack.len() {
                         stack.push(stack[idx].clone());
                     }
@@ -232,9 +241,9 @@ impl ThorVm {
                         status = VmStatus::Error;
                         break;
                     }
-                    let idx = u32::from_be_bytes(
-                        bytecode[pc + 1..pc + 5].try_into().unwrap_or([0u8; 4]),
-                    ) as usize;
+                    let idx =
+                        u32::from_be_bytes(bytecode[pc + 1..pc + 5].try_into().unwrap_or([0u8; 4]))
+                            as usize;
                     if let Some(v) = stack.pop() {
                         if idx < stack.len() {
                             stack[idx] = v;
@@ -247,15 +256,13 @@ impl ThorVm {
                 Instruction::Base(Opcode::Add) => binop(&mut stack, |a, b| a + b),
                 Instruction::Base(Opcode::Sub) => binop(&mut stack, |a, b| a - b),
                 Instruction::Base(Opcode::Mul) => binop(&mut stack, |a, b| a * b),
-                Instruction::Base(Opcode::Div) => binop(&mut stack, |a, b| {
-                    if b == 0.0 { f64::NAN } else { a / b }
-                }),
+                Instruction::Base(Opcode::Div) => {
+                    binop(&mut stack, |a, b| if b == 0.0 { f64::NAN } else { a / b })
+                }
                 Instruction::Base(Opcode::Mod) => binop(&mut stack, |a, b| a % b),
                 Instruction::Base(Opcode::Neg) => {
-                    if let Some(v) = stack.last_mut() {
-                        if let Value::F64(f) = v {
-                            *f = -*f;
-                        }
+                    if let Some(Value::F64(f)) = stack.last_mut() {
+                        *f = -*f;
                     }
                 }
 
@@ -269,8 +276,12 @@ impl ThorVm {
                 }
 
                 // ── Comparison ──────────────────────────────
-                Instruction::Base(Opcode::Eq) => cmpop(&mut stack, |a, b| (a - b).abs() < f64::EPSILON),
-                Instruction::Base(Opcode::Ne) => cmpop(&mut stack, |a, b| (a - b).abs() >= f64::EPSILON),
+                Instruction::Base(Opcode::Eq) => {
+                    cmpop(&mut stack, |a, b| (a - b).abs() < f64::EPSILON)
+                }
+                Instruction::Base(Opcode::Ne) => {
+                    cmpop(&mut stack, |a, b| (a - b).abs() >= f64::EPSILON)
+                }
                 Instruction::Base(Opcode::Lt) => cmpop(&mut stack, |a, b| a < b),
                 Instruction::Base(Opcode::Le) => cmpop(&mut stack, |a, b| a <= b),
                 Instruction::Base(Opcode::Gt) => cmpop(&mut stack, |a, b| a > b),
@@ -282,9 +293,8 @@ impl ThorVm {
                         status = VmStatus::Error;
                         break;
                     }
-                    let offset = i32::from_be_bytes(
-                        bytecode[pc + 1..pc + 5].try_into().unwrap_or([0u8; 4]),
-                    );
+                    let offset =
+                        i32::from_be_bytes(bytecode[pc + 1..pc + 5].try_into().unwrap_or([0u8; 4]));
                     pc = (pc as i64 + offset as i64) as usize;
                     instructions_executed += 1;
                     continue;
@@ -294,9 +304,8 @@ impl ThorVm {
                         status = VmStatus::Error;
                         break;
                     }
-                    let offset = i32::from_be_bytes(
-                        bytecode[pc + 1..pc + 5].try_into().unwrap_or([0u8; 4]),
-                    );
+                    let offset =
+                        i32::from_be_bytes(bytecode[pc + 1..pc + 5].try_into().unwrap_or([0u8; 4]));
                     let cond = stack.pop().and_then(|v| v.as_bool()).unwrap_or(false);
                     if !cond {
                         pc = (pc as i64 + offset as i64) as usize;
@@ -310,9 +319,8 @@ impl ThorVm {
                         status = VmStatus::Error;
                         break;
                     }
-                    let offset = i32::from_be_bytes(
-                        bytecode[pc + 1..pc + 5].try_into().unwrap_or([0u8; 4]),
-                    );
+                    let offset =
+                        i32::from_be_bytes(bytecode[pc + 1..pc + 5].try_into().unwrap_or([0u8; 4]));
                     let cond = stack.pop().and_then(|v| v.as_bool()).unwrap_or(false);
                     if cond {
                         pc = (pc as i64 + offset as i64) as usize;
@@ -327,18 +335,18 @@ impl ThorVm {
                         status = VmStatus::Error;
                         break;
                     }
-                    let addr = u32::from_be_bytes(
-                        bytecode[pc + 1..pc + 5].try_into().unwrap_or([0u8; 4]),
-                    ) as usize;
+                    let addr =
+                        u32::from_be_bytes(bytecode[pc + 1..pc + 5].try_into().unwrap_or([0u8; 4]))
+                            as usize;
                     stack.push(Value::I64((pc + 4) as i64));
                     pc = addr;
                     instructions_executed += 1;
                     continue;
                 }
                 Instruction::Base(Opcode::Ret) => {
-                    if let Some(Value::I64(ret_pc)) = stack.pop().and_then(|v| match v {
-                        Value::I64(i) => Some(Value::I64(i)),
-                        other => Some(other), // put it back, not a return address
+                    if let Some(Value::I64(ret_pc)) = stack.pop().map(|v| match v {
+                        Value::I64(i) => Value::I64(i),
+                        other => other, // put it back, not a return address
                     }) {
                         pc = ret_pc as usize;
                         instructions_executed += 1;
@@ -398,9 +406,9 @@ impl ThorVm {
                         status = VmStatus::Error;
                         break;
                     }
-                    let n = u32::from_be_bytes(
-                        bytecode[pc + 1..pc + 5].try_into().unwrap_or([0u8; 4]),
-                    ) as usize;
+                    let n =
+                        u32::from_be_bytes(bytecode[pc + 1..pc + 5].try_into().unwrap_or([0u8; 4]))
+                            as usize;
                     pc += 4;
                     parallel_branches += n as u64;
 
@@ -453,10 +461,7 @@ impl ThorVm {
 
                 Instruction::Thor(ThorOpcode::BatchSolve) => {
                     gpu_offloads += 1;
-                    let n = stack
-                        .pop()
-                        .and_then(|v| v.as_i64())
-                        .unwrap_or(1) as usize;
+                    let n = stack.pop().and_then(|v| v.as_i64()).unwrap_or(1) as usize;
                     debug!("BATCH_SOLVE: solving {n} CSP instances on GPU");
                     // In full impl: ship n problems to GPU, collect solutions
                     stack.push(Value::I64(n as i64)); // number solved
@@ -464,10 +469,7 @@ impl ThorVm {
 
                 Instruction::Thor(ThorOpcode::SonarBatch) => {
                     gpu_offloads += 1;
-                    let n = stack
-                        .pop()
-                        .and_then(|v| v.as_i64())
-                        .unwrap_or(1) as usize;
+                    let n = stack.pop().and_then(|v| v.as_i64()).unwrap_or(1) as usize;
                     debug!("SONAR_BATCH: computing {n} sonar physics on GPU");
                     stack.push(Value::I64(n as i64));
                 }
@@ -499,7 +501,8 @@ impl ThorVm {
             }
         }
 
-        self.total_executed.fetch_add(instructions_executed, Ordering::Relaxed);
+        self.total_executed
+            .fetch_add(instructions_executed, Ordering::Relaxed);
 
         let elapsed = start.elapsed().as_nanos() as u64;
 
@@ -520,10 +523,7 @@ impl ThorVm {
 
     /// Execute N independent FLUX programs in parallel via tokio + rayon.
     pub async fn execute_batch(&self, programs: &[Vec<u8>]) -> Vec<VmResult> {
-        let futures: Vec<_> = programs
-            .iter()
-            .map(|bc| self.execute(bc))
-            .collect();
+        let futures: Vec<_> = programs.iter().map(|bc| self.execute(bc)).collect();
         let mut results = Vec::with_capacity(futures.len());
         for f in futures {
             results.push(f.await);
@@ -564,4 +564,3 @@ fn cmpop(stack: &mut Vec<Value>, f: impl Fn(f64, f64) -> bool) {
 }
 
 // Separate module for futures used in batch
-

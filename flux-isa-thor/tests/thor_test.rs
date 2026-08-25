@@ -1,14 +1,18 @@
-use flux_isa_thor::cuda::solver::{BatchCspSolver, CspConstraint, ConstraintRelation, CspInstance};
+use flux_isa_thor::cuda::solver::{BatchCspSolver, ConstraintRelation, CspConstraint, CspInstance};
 use flux_isa_thor::cuda::sonar::{BatchSonarPhysics, SonarParams};
 use flux_isa_thor::cuda::GpuDispatcher;
 use flux_isa_thor::fleet::{FleetHandle, FleetNode, NodeRole, NodeStatus};
 use flux_isa_thor::opcode::{Instruction, Opcode, ThorOpcode};
-use flux_isa_thor::plato::{PlatoHandle, cache::TileCache, client::PlatoClient};
+use flux_isa_thor::plato::{cache::TileCache, client::PlatoClient, PlatoHandle};
 use flux_isa_thor::vm::{ThorVm, VmConfig};
 
 fn make_test_vm() -> std::sync::Arc<ThorVm> {
     let gpu = std::sync::Arc::new(GpuDispatcher::new(false, 0, 4));
-    let plato_client = std::sync::Arc::new(PlatoClient::new("http://localhost:1", 4, std::time::Duration::from_secs(1)));
+    let plato_client = std::sync::Arc::new(PlatoClient::new(
+        "http://localhost:1",
+        4,
+        std::time::Duration::from_secs(1),
+    ));
     let cache = std::sync::Arc::new(tokio::sync::RwLock::new(TileCache::new(100)));
     let plato = std::sync::Arc::new(PlatoHandle::new(plato_client, cache));
     let fleet = std::sync::Arc::new(FleetHandle::new(FleetNode {
@@ -98,7 +102,9 @@ async fn test_batch_sonar() {
 
     let results = engine.compute_batch(&params).await;
     assert_eq!(results.len(), 50);
-    assert!(results.iter().all(|r| r.sound_speed > 1400.0 && r.sound_speed < 1600.0));
+    assert!(results
+        .iter()
+        .all(|r| r.sound_speed > 1400.0 && r.sound_speed < 1600.0));
 }
 
 #[test]
@@ -142,7 +148,7 @@ async fn test_pipeline() {
 
 #[test]
 fn test_tile_cache() {
-    use flux_isa_thor::plato::{Tile, cache::TileCache};
+    use flux_isa_thor::plato::{cache::TileCache, Tile};
     let mut cache = TileCache::new(100);
     let tile = Tile {
         id: uuid::Uuid::new_v4(),
