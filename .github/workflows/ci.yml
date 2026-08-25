@@ -32,7 +32,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      # Pinned deliberately. `-D warnings` plus a floating toolchain means a new
+      # Rust release turns this build red with nobody having touched the code --
+      # which is exactly what happened: CI's stable moved to 1.98.0, which added
+      # `clippy::drain_collect`, and the job failed on code that had not changed.
+      # `check` and `test` below stay on floating stable, so a real
+      # incompatibility with a new compiler still surfaces; only the lint gate is
+      # deterministic. Bumping this is a deliberate commit that carries its own
+      # fixes with it.
+      - uses: dtolnay/rust-toolchain@1.98.0
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
@@ -43,7 +51,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      # Pinned for the same reason as clippy: rustfmt's output changes between
+      # releases, and a formatter that gates must not also move on its own.
+      - uses: dtolnay/rust-toolchain@1.98.0
         with:
           components: rustfmt
       - name: Format check

@@ -379,6 +379,8 @@ impl Vm {
 
     /// Drain the stack.
     pub fn drain_stack(&mut self) -> Vec<f64> {
-        self.stack.drain(..).collect()
+        // `mem::take` hands over the existing allocation; `drain(..).collect()`
+        // walked it and built a second one for the same contents.
+        std::mem::take(&mut self.stack)
     }
 }
