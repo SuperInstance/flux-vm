@@ -125,16 +125,31 @@ python3 src/maritime_constraints.py     # standalone demo, runs directly
 python3 bridge/flux_c_to_x.py           # standalone demo, runs directly
 ```
 
-The C core runtime (`src/flux_runtime_arm.c`, `src/flux_runtime_arm.h`) does
-**not** compile as committed with a standard compiler invocation
-(`gcc -c src/flux_runtime_arm.c`): the `.c` file includes `flux_runtime_arm.h`
-before `<stdint.h>`, and the header uses `uint16_t`/`int32_t`/`uint8_t`
-without including `<stdint.h>` itself, so the first inclusion fails with
-"unknown type name". It's written and commented for
-`arm-none-eabi-gcc -mcpu=cortex-r5 -mthumb`; it has not been verified to
-build for that target from this repo, and it does not build as a plain
-translation unit either. `src/flux_monitor_arm.c` compiles standalone with
-no such issue.
+The C core runtime (`src/flux_runtime_arm.c`, `src/flux_runtime_arm.h`) now
+compiles cleanly as a plain translation unit:
+
+```bash
+gcc -c -std=c11 -Wall -Wextra -Werror -Isrc src/flux_runtime_arm.c
+```
+
+It did not, until recently, and it is worth recording why. The header declared
+`uint16_t`/`int32_t`/`uint8_t` without including `<stdint.h>`, and the `.c` file
+included the header before `<stdint.h>` rather than after — so the first
+inclusion failed with "unknown type name" and the file never built at all.
+Making the header self-contained then exposed a second error underneath it: a
+duplicated pair of declarations in `flux_check`, which nothing had ever reached
+because the build died earlier.
+
+Neither was going to be found by reading, and CI could not find them either —
+it ran `cargo check`, `cargo test`, `clippy` and `fmt`, all Rust, while the C
+sat unbuilt. There is now a `c` job that compiles every `.c` with
+`-Wall -Wextra -Werror` and compiles every header on its own, so a header that
+depends on being included second fails the build rather than waiting for the
+next person.
+
+It is still written and commented for `arm-none-eabi-gcc -mcpu=cortex-r5
+-mthumb`, and building for *that* target from this repo remains unverified.
+`src/flux_monitor_arm.c` compiles standalone and always did.
 
 `test_sat8` is a prebuilt binary, x86-64 only (confirmed with `file`), not
 buildable from source in this repo. It runs and passes 5 tests on an x86-64

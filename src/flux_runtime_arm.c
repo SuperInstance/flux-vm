@@ -151,10 +151,6 @@ int flux_check(
     int result = FLUX_PASS;
     uint16_t total_gas_used = 0U;
 
-    /* ---- Dispatch ---- */
-    int result = FLUX_PASS;
-    uint16_t total_gas_used = 0U;
-
 #ifdef FLUX_SWITCH_DISPATCH
 
     /* ============================================================== */

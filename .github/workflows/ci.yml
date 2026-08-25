@@ -48,3 +48,37 @@ jobs:
           components: rustfmt
       - name: Format check
         run: cargo fmt --all -- --check
+
+  # The C sources were compiled by nothing. CI ran cargo check, cargo test,
+  # clippy and fmt -- all Rust -- while src/*.c sat unbuilt, and
+  # src/flux_runtime_arm.c did not compile at all: its header declared
+  # int32_t and uint16_t without including <stdint.h>, and the file included
+  # <stdint.h> after the header rather than before. Fixing that exposed a
+  # second error underneath, a duplicated pair of declarations in flux_check,
+  # which nothing had reached because the build died earlier.
+  #
+  # Neither would have been found by reading. Both are found by compiling, so
+  # this job compiles.
+  c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Every C source compiles, warnings included
+        run: |
+          for f in src/*.c; do
+            echo "== $f"
+            gcc -c -std=c11 -Wall -Wextra -Werror -Isrc -Iinclude "$f" -o /dev/null
+          done
+
+      # A header that only compiles when something else was included first is
+      # a trap for the next translation unit that includes it, and is exactly
+      # what broke here. Each header is compiled alone.
+      - name: Every header stands on its own
+        run: |
+          for h in src/*.h include/*.h; do
+            [ -e "$h" ] || continue
+            echo "== $h"
+            printf '#include "%s"\nint main(void){return 0;}\n' "$(basename "$h")" > /tmp/probe.c
+            gcc -fsyntax-only -std=c11 -Wall -Wextra -Werror -Isrc -Iinclude /tmp/probe.c
+          done
