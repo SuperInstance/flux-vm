@@ -198,6 +198,15 @@ doc, not something implemented here.
 
 ## Not built yet
 
+**`src/flux_sat8_ops.inc`** — INT8 saturating arithmetic. Real logic, but it is
+a fragment rather than a header: it calls `flux_pop`/`flux_push`, which are
+defined nowhere in this repository, and no translation unit includes it. It is
+named `.inc` so that the CI check requiring every `.h` to compile on its own
+stays absolute instead of growing an exception. Its docstring's claims about a
+50-opcode base ISA, DO-178C DAL A and a Coq proof are inherited from an earlier
+draft and are unsupported here.
+
+
 These appear in comments or in the design doc, but nothing in this repo
 implements them. Listed here so they're visible as intentions rather than
 silently dropped or, worse, silently implied to exist:
