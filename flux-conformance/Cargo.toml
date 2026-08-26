@@ -1,0 +1,22 @@
+[package]
+name = "flux-conformance"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Golden-corpus conformance harness for the flux-vm implementation family. Documents divergences; does not fix semantics."
+publish = false
+
+[dependencies]
+flux-isa = { path = "../flux-isa" }
+flux-isa-mini = { path = "../flux-isa-mini" }
+flux-isa-std = { path = "../flux-isa-std" }
+flux-isa-edge = { path = "../flux-isa-edge" }
+flux-isa-thor = { path = "../flux-isa-thor" }
+tokio = { version = "1", features = ["rt", "time"] }
+# The thor/edge crates pull reqwest with native-tls. CI runners ship
+# libssl-dev; this box does not, so vendor OpenSSL from source to keep the
+# harness self-contained (build-time only; no behavioral impact).
+openssl = { version = "0.10", features = ["vendored"] }
+
+[lib]
+name = "flux_conformance"
